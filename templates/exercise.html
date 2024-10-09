@@ -1,0 +1,212 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文言文出题及背诵助手</title>
+    <script src="{{ url_for('static', filename='js/generate.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/exercise.js') }}"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/exercise.css') }}">
+
+    <style>
+        body {
+            font-family: "Arial", sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-image: url('/static/images/img.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .header {
+            background-color: #6d4427;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 24px;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0); /* 透明白色背景 */
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .card {
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 45%;
+            padding: 0;
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            height: 550px;
+            overflow: hidden;
+        }
+
+        .title {
+            background-color: #6d4427;
+            color: white;
+            font-size: 20px;
+            line-height: 40px;
+            border-radius: 5px 5px 0 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 10px 0;
+            position: relative;
+        }
+
+        .title div {
+            flex: 1;
+            text-align: center;
+        }
+
+        .indicator {
+            position: absolute;
+            bottom: 0;
+            width: 50%;
+            height: 4px;
+            background-color: white;
+            transition: left 0.3s;
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+
+        .content {
+            padding: 20px;
+            font-size: 16px;
+            text-align: left;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+<div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
+<div class="container">
+    <div class="card">
+        <div class="title">
+            <div onclick="toggleText1('original')" id="text1-original">原文</div>
+            <!--
+            <div onclick="toggleText1('translation')" id="text1-translation">译文</div>
+            <div class="indicator" id="indicator1"></div>
+            -->
+        </div>
+        <div class="content" id="text1-content">
+            <!-- 原文和译文内容将会在这里显示 -->
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="title">题目</div>
+        <div class="content" id="questions-content">
+            <div class="actions">
+                <span>题目一：</span>
+                <span class="icon" onclick="refreshQuestion('question1-content')"><i class="fas fa-sync-alt"></i></span>
+            </div>
+            <div class="content" id="question1-content">
+                <!-- 题目一内容将会在这里显示 -->
+            </div>
+
+            <div class="actions">
+                <span>参考答案：</span>
+                <span class="icon" onclick="toggleAnswer('answer1-content')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="content" id="answer1-content">
+                <!-- 题目一参考答案将会在这里显示 -->
+            </div>
+
+            <div class="divider"></div>
+            <div class="actions">
+                <span>题目二：</span>
+                <span class="icon" onclick="refreshQuestion('question2-content')"><i class="fas fa-sync-alt"></i></span>
+            </div>
+
+            <div class="content" id="question2-content">
+                <!-- 题目二内容将会在这里显示 -->
+            </div>
+
+            <div class="actions">
+                <span>参考答案：</span>
+                <span class="icon" onclick="toggleAnswer('answer2-content')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="content" id="answer2-content">
+                <!-- 题目二参考答案将会在这里显示 -->
+            </div>
+
+            <div class="divider"></div>
+            <div class="actions">
+                <span>题目三：</span>
+                <span class="icon" onclick="refreshQuestion('question3-content')"><i class="fas fa-sync-alt"></i></span>
+            </div>
+
+            <div class="content" id="question3-content">
+                <!-- 题目三内容将会在这里显示 -->
+            </div>
+
+            <div class="actions">
+                <span>参考答案：</span>
+                <span class="icon" onclick="toggleAnswer('answer3-content')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="content" id="answer3-content">
+                <!-- 题目三参考答案将会在这里显示 -->
+            </div>
+
+            <div class="divider"></div>
+            <div class="actions">
+                <span>题目四：</span>
+                <span class="icon" onclick="refreshQuestion('question4-content')"><i class="fas fa-sync-alt"></i></span>
+            </div>
+
+            <div class="content" id="question4-content">
+                <!-- 题目四内容将会在这里显示 -->
+            </div>
+
+            <div class="actions">
+                <span>参考答案：</span>
+                <span class="icon" onclick="toggleAnswer('answer4-content')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="content" id="answer4-content">
+                <!-- 题目四参考答案将会在这里显示 -->
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="actions">
+                <span>题目五：</span>
+                <span class="icon" onclick="refreshQuestion('question5-content')"><i class="fas fa-sync-alt"></i></span>
+            </div>
+
+            <div class="content" id="question5-content">
+                <!-- 题目五内容将会在这里显示 -->
+            </div>
+
+            <div class="actions">
+                <span>参考答案：</span>
+                <span class="icon" onclick="toggleAnswer('answer5-content')"><i class="fas fa-eye-slash"></i></span>
+            </div>
+            <div class="content" id="answer5-content">
+                <!-- 题目五参考答案将会在这里显示 -->
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="footer">
+    <button onclick="redirect()">返回首页</button>
+    <button onclick="reloadQuestions()">重新生成所有题目</button>
+</div>
+
+</body>
+</html>

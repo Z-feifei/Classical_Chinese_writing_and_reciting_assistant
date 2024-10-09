@@ -1,0 +1,15 @@
+#carousel {
+    max-width: 300px;
+    overflow: hidden;
+    margin-bottom: 20px;
+    position: relative;
+}
+
+#carousel img {
+    width: 100%;
+    display: none;
+}
+
+#carousel img:first-child {
+    display: block;
+}

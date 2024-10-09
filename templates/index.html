@@ -1,0 +1,184 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文言文出题及背诵助手</title>
+    <script src="{{ url_for('static', filename='js/stars.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/generate.js') }}"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/stars.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/carousel.css') }}">
+
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: url('/static/images/img.png');
+            background-size: cover; /* 让背景图像覆盖整个区域 */
+            background-position: center; /* 使背景图像居中显示 */
+            background-repeat: no-repeat; /* 防止背景重复 */
+        }
+
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.8); /* 透明白色背景 */
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: 1000px;
+            width: 100%;
+            text-align: center;
+            padding-bottom: 30px;
+        }
+
+
+        .header {
+            background-color: #6d4427;
+            border-radius: 10px 10px 0 0;
+            color: white;
+            padding: 10px;
+            font-size: 1.5em;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        textarea {
+            width: 80%;
+            height: 150px;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .ratings {
+            text-align: left;
+        }
+
+        .rating-item {
+            display: flex;
+            align-items: center;
+        }
+
+        .rating-item span {
+            margin-right: 10px;
+        }
+
+        .submit-btn {
+            background-color: #6d4427;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
+    <div class="content">
+
+        <div id="carousel">
+           <img src="/static/images/carousel1.png" alt="Placeholder 1" id="carousel1">
+            <img src="/static/images/carousel2.png" alt="Placeholder 2" id="carousel2">
+            <img src="/static/images/carousel3.png" alt="Placeholder 3" id="carousel3">
+            <img src="/static/images/carousel4.png" alt="Placeholder 4" id="carousel4">
+            <img src="/static/images/carousel5.png" alt="Placeholder 5" id="carousel5">
+            <img src="/static/images/carousel6.png" alt="Placeholder 6" id="carousel6">
+        </div>
+
+        <textarea id="article" placeholder="在此处输入文章内容"></textarea>
+        <div class="ratings">
+            <span style="font-weight: bold;">选择题目难度：</span>
+            <div class="rating-item">
+                <span>第一题</span>
+                <div class="stars">
+                    <input type="radio" id="first1" name="first" value=1>
+                    <label for="first1">★</label>
+                    <input type="radio" id="first2" name="first" value=2>
+                    <label for="first2">★</label>
+                    <input type="radio" id="first3" name="first" value=3>
+                    <label for="first3">★</label>
+                    <input type="radio" id="first4" name="first" value=4>
+                    <label for="first4">★</label>
+                </div>
+            </div>
+            <div class="rating-item">
+                <span>第二题</span>
+                <div class="stars">
+                    <input type="radio" id="second1" name="second" value=1>
+                    <label for="second1">★</label>
+                    <input type="radio" id="second2" name="second" value=2>
+                    <label for="second2">★</label>
+                    <input type="radio" id="second3" name="second" value=3>
+                    <label for="second3">★</label>
+                    <input type="radio" id="second4" name="second" value=4>
+                    <label for="second4">★</label>
+                </div>
+            </div>
+            <div class="rating-item">
+                <span>第三题</span>
+                <div class="stars">
+                    <input type="radio" id="third1" name="third" value=1>
+                    <label for="third1">★</label>
+                    <input type="radio" id="third2" name="third" value=2>
+                    <label for="third2">★</label>
+                    <input type="radio" id="third3" name="third" value=3>
+                    <label for="third3">★</label>
+                    <input type="radio" id="third4" name="third" value=4>
+                    <label for="third4">★</label>
+                </div>
+            </div>
+            <div class="rating-item">
+                <span>第四题</span>
+                <div class="stars">
+                    <input type="radio" id="fourth1" name="fourth" value=1>
+                    <label for="fourth1">★</label>
+                    <input type="radio" id="fourth2" name="fourth" value=2>
+                    <label for="fourth2">★</label>
+                    <input type="radio" id="fourth3" name="fourth" value=3>
+                    <label for="fourth3">★</label>
+                    <input type="radio" id="fourth4" name="fourth" value=4>
+                    <label for="fourth4">★</label>
+                </div>
+            </div>
+            <div class="rating-item">
+                <span>第五题</span>
+                <div class="stars">
+                    <input type="radio" id="fifth1" name="fifth" value=1>
+                    <label for="fifth1">★</label>
+                    <input type="radio" id="fifth2" name="fifth" value=2>
+                    <label for="fifth2">★</label>
+                    <input type="radio" id="fifth3" name="fifth" value=3>
+                    <label for="fifth3">★</label>
+                    <input type="radio" id="fifth4" name="fifth" value=4>
+                    <label for="fifth4">★</label>
+                </div>
+            </div>
+        </div>
+        <button class="submit-btn" onclick="handleSubmit()">生成题目</button>
+    </div>
+</div>
+
+</body>
+</html>
