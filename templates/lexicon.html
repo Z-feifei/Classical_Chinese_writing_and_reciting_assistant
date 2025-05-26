@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>文言文词库</title>
+    <script src="{{ url_for('static', filename='js/lexical.js') }}"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/lexical.css') }}">
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="搜索汉字、拼音...">
+        </div>
+
+        <ul class="pos-filter">
+            <li class="pos-item">动词</li>
+            <li class="pos-item">名词</li>
+            <li class="pos-item">形容词</li>
+            <li class="pos-item">代词</li>
+        </ul>
+    </aside>
+
+    <main class="main-content" id="contentArea">
+        <!-- 卡片通过JS动态生成 -->
+    </main>
+
+</body>
+</html>

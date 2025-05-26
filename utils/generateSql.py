@@ -10,7 +10,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 
-# 数据模型定义（与问题中提供的完全一致）
+# 数据模型定义
 class LexicalParticle(db.Model):
     __tablename__ = 'lexical_particles'
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +44,7 @@ class Example(db.Model):
 
 def parse_document(content):
     lexicals = []
-    # 分割虚词章节
+    # 分割实虚词章节
     sections = re.findall(r'### \d+\. (.+?)(?=###|\Z)', content, flags=re.DOTALL)
 
     for section in sections:
@@ -93,7 +93,7 @@ def parse_document(content):
 def insert_data(lexicals):
     with app.app_context():
         for lex in lexicals:
-            # 插入虚词
+            # 插入实虚词
             particle = LexicalParticle.query.filter_by(character=lex['character']).first()
             if not particle:
                 particle = LexicalParticle(character=lex['character'])

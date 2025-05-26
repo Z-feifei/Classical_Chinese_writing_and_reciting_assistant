@@ -149,6 +149,16 @@ def regenerate_model(nums):
         answers[f'answer{num}'] = result['answers'][f'answer{num}']
     return {'questions': questions, 'answers': answers}
 
+
+# 正确配置应改为：
+@app.route('/lexicon')
+def lexicon():
+    return render_template('lexicon.html')
+
+@app.route('/personal')
+def personal():
+    return render_template('personal.html')
+
 if __name__ == '__main__':
     # 设置全局事件循环
     asyncio.set_event_loop(global_loop)

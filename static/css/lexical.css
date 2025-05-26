@@ -1,0 +1,123 @@
+:root {
+    --sidebar-bg: #562B08;
+    --main-bg: #FFF7F0;
+    --card-bg: #FFFFFF;
+    --primary-text: #333;
+    --secondary-text: #666;
+}
+
+body {
+    margin: 0;
+    font-family: "SimSun", "宋体", serif;
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 侧边栏样式 */
+.sidebar {
+    width: 280px;
+    background: var(--sidebar-bg);
+    padding: 20px;
+    color: white;
+}
+
+.search-box {
+    margin-bottom: 25px;
+}
+
+#searchInput {
+    width: 90%;
+    padding: 12px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
+
+.pos-filter {
+    list-style: none;
+    padding: 0;
+}
+
+.pos-item {
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.pos-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* 主内容区 */
+.main-content {
+    flex: 1;
+    padding: 30px;
+    background: var(--main-bg);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* 字卡片 */
+.character-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.character-header {
+    font-size: 2em;
+    color: var(--primary-text);
+    margin-bottom: 15px;
+}
+
+.pos-tags {
+    margin-bottom: 15px;
+}
+
+.pos-tag {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #E8E8E8;
+    border-radius: 15px;
+    margin-right: 8px;
+    font-size: 0.9em;
+}
+
+.definition-list {
+    color: var(--secondary-text);
+}
+
+.example-item {
+    margin: 10px 0;
+    padding-left: 15px;
+    border-left: 3px solid #EEE;
+    font-style: italic;
+}
+
+/* 添加以下补充样式 */
+.pos-section {
+    margin: 15px 0;
+    padding: 10px;
+    background: #F8F8F8;
+    border-radius: 6px;
+}
+
+.pos-section h3 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-size: 1.1em;
+    border-bottom: 1px solid #EEE;
+    padding-bottom: 5px;
+}
+
+.definition-list li {
+    margin: 12px 0;
+    padding: 8px;
+    background: white;
+    border-radius: 4px;
+}
