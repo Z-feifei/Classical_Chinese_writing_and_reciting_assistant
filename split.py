@@ -3,8 +3,10 @@ import re
 
 def separate_questions_answers(text, nums):
     # 使用正则表达式提取题目和答案
-    questions = re.findall(r'(?<=\*\*题目\*\*：\n)[\s\S]*?(?=\*\*答案\*\*：)', text)
-    answers_with_explanations = re.findall(r'(?<=\*\*答案\*\*：\n)[\s\S]*?(?=\*\*题目\*\*：|\Z)', text)
+    # questions = re.findall(r'(?<=【题目】)[\s\S]*?(?=【答案】)', text)
+    # answers_with_explanations = re.findall(r'(?<=【答案】)[\s\S]*?(?=【题目】|\Z)', text)
+    questions = re.findall(r'(?<=\*\*题目\*\*：)[\s\S]*?(?=\*\*答案\*\*：)', text)
+    answers_with_explanations = re.findall(r'(?<=\*\*答案\*\*：)[\s\S]*?(?=\*\*题目\*\*：|\Z)', text)
 
     # 创建字典
     questions_dict = {}

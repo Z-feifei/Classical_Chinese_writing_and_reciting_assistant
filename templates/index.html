@@ -6,10 +6,12 @@
     <script src="{{ url_for('static', filename='js/stars.js') }}"></script>
     <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/generate.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lexicon.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/personal.js') }}"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stars.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/carousel.css') }}">
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
         body {
@@ -39,6 +41,7 @@
 
 
         .header {
+            position: relative; /* 新增 */
             background-color: #6d4427;
             border-radius: 10px 10px 0 0;
             color: white;
@@ -91,10 +94,40 @@
             cursor: pointer;
             margin-top: 20px;
         }
+        .icon-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 20px;
+            z-index: 1000;
+        }
+
+        .icon-link {
+            color: #6d4427;
+            font-size: 24px;
+            text-decoration: none;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 8px;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .icon-link:hover {
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body>
 <div class="container">
+    <div class="icon-container">
+        <a href="lexicon.html" class="icon-link" title="实词库">
+            <i class="fas fa-book-open"></i>
+        </a>
+        <a href="personal.html" class="icon-link" title="个人中心">
+            <i class="fas fa-user-circle"></i>
+        </a>
+    </div>
     <div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
     <div class="content">
 
