@@ -1,0 +1,23 @@
+.stars {
+    display: flex;
+}
+
+.stars input {
+    display: none;
+}
+
+.stars label {
+    font-size: 20px;
+    color: #ccc;
+    cursor: pointer;
+}
+
+.stars:hover > label,
+.stars input:checked > label {
+    color: #fd4;
+}
+
+.stars label:hover ~ label,
+.stars input:checked + label ~ label {
+    color: #ccc;
+}

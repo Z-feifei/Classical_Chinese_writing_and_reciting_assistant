@@ -1,0 +1,52 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文言文出题及背诵助手</title>
+    <script src="{{ url_for('static', filename='js/recite.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/recite.css') }}">
+</head>
+<body>
+<div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
+
+<div class="container">
+    <div class="content">
+        <div class="button-container">
+            <button id="home-button">
+                <img class="icon1" src="/static/images/back_icon.png"/>
+            </button>
+            <button id="next-button">
+                <img class="icon1" src="/static/images/next_icon.png"/>
+            </button>
+        </div>
+        <div class="text-container">
+            <h2>道
+                <button id="mark-familiar"><img class="icon2" src="/static/images/familiar_icon.png"/></button>
+            </h2>
+            <p>
+                (1) 用作名词<br>
+                ① 道理、真理、规律。<br>
+                喻素而力亏，破灭之道也。《六国论》，道理。<br>
+                ② 主张、学说、思想、道德、道义。<br>
+                A. 师者，所以传道授业解惑也。《师说》，思想、道德。<br>
+                B. 得道多助，失道寡助。《孟子·公孙丑下》<br>
+                ③ 方法（策略）。<br>
+                此其为宰之道也。《齐人有一妻一妾》<br>
+                (2) 用作动词<br>
+                ① 赶路。<br>
+                晨夜兼道， 比至南郡。《赤壁之战》<br>
+                ② 取道，经过。<br>
+                从鄂山下，道芷阳间行。《鸿门宴》<br>
+                ③ 说，讲，谈论。 <br>
+                如：<br>
+                A．人道是，三国周郎赤壁。（《念奴骄•赤壁怀古》）<br>
+                B．仲尼之徒无道桓文之事。（《孟子•齐桓晋文之事》）<br>
+            </p>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

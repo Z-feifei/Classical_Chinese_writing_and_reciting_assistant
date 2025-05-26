@@ -1,0 +1,90 @@
+/* styles.css */
+body {
+    font-family: "Arial", sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-image: url('/static/images/img.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.header {
+    background-color: #6d4427;
+    color: white;
+    text-align: center;
+    padding: 20px;
+    font-size: 24px;
+}
+
+.container {
+    background-color: rgba(255, 255, 255, 0.8); /* 透明白色背景 */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 800px;
+    height: 80vh; /* 设置高度以便溢出滚动 */
+    box-shadow: 0 2px 4px rgba(109, 68, 39, 0.1); /* 修改后的阴影颜色 */
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.content {
+    padding: 20px;
+    font-size: 16px;
+    text-align: left;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+button {
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #6d4427;
+
+}
+
+button img.icon1 {
+    height: 30px;
+}
+
+button img.icon2 {
+    height: 20px;
+}
+
+.text-container {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-left: 20px;
+}
+
+.text-container h2 {
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+    margin-bottom: 10px;
+}
+
+.text-container h2 span {
+    background-color: #ffd700;
+    border-radius: 5px;
+    padding: 3px 6px;
+    font-size: 12px;
+    margin-left: 20px;
+}
