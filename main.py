@@ -3,14 +3,73 @@ import asyncio
 from flask import Flask, request, jsonify, render_template
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_sqlalchemy import SQLAlchemy
 
 import UseModel
 import split
+
 
 # 创建全局事件循环（仅创建不立即设置）
 global_loop = asyncio.new_event_loop()
 
 app = Flask(__name__)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://feifei123:4RQl2C3Bzam1WGr4@mysql5.sqlpub.com:3310/classical_chinese'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_recycle': 300,
+    'pool_pre_ping': True
+}
+
+db = SQLAlchemy(app)
+
+
+# 实虚词表模型
+class LexicalParticle(db.Model):
+    __tablename__ = 'lexical_particles'
+
+    id = db.Column(db.Integer, primary_key=True)
+    character = db.Column(db.String(50), nullable=False, unique=True)  # 汉字
+
+    # 建立一对多关系
+    parts_of_speech = db.relationship('PartOfSpeech', backref='particle', cascade='all, delete-orphan')
+
+
+# 词性分类表模型
+class PartOfSpeech(db.Model):
+    __tablename__ = 'parts_of_speech'
+
+    id = db.Column(db.Integer, primary_key=True)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    category = db.Column(db.String(20), nullable=False)  # 词性分类
+    sub_category = db.Column(db.String(5))  # 子分类标记
+
+    # 建立一对多关系
+    definitions = db.relationship('Definition', backref='pos', cascade='all, delete-orphan')
+
+
+# 释义表模型
+class Definition(db.Model):
+    __tablename__ = 'definitions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    pos_id = db.Column(db.Integer, db.ForeignKey('parts_of_speech.id'), nullable=False)
+    definition = db.Column(db.Text, nullable=False)  # 详细释义
+
+
+    # 建立一对多关系
+    examples = db.relationship('Example', backref='definition', cascade='all, delete-orphan')
+
+
+# 例句表模型
+class Example(db.Model):
+    __tablename__ = 'examples'
+
+    id = db.Column(db.Integer, primary_key=True)
+    definition_id = db.Column(db.Integer, db.ForeignKey('definitions.id'), nullable=False)
+    example = db.Column(db.Text, nullable=False)  # 文言例句
+
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
@@ -151,10 +210,56 @@ def regenerate_model(nums):
 
 
 # 正确配置应改为：
-@app.route('/lexicon')
-def lexicon():
+@app.route('/lexicon', endpoint='lexicon')
+def lexicon_page():
+    """词库页面路由"""
     return render_template('lexicon.html')
 
+
+@app.route('/api/lexicon')
+def lexicon_data():
+    """词库数据API"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 3
+    main_categories = {'连词', '助词', '语气词', '比况词', '代词', '副词', '介词', '形容词'}
+
+    pagination = LexicalParticle.query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    processed_data = []
+    for particle in pagination.items:
+        parts = []
+        for pos in particle.parts_of_speech:
+            main_cat = pos.category if pos.category in main_categories else '其他'
+            display = f"{pos.category}"
+
+            definitions = [{
+                "definition": d.definition,
+                "examples": [e.example for e in d.examples]
+            } for d in pos.definitions]
+
+            parts.append({
+                "main_category": main_cat,
+                "display_category": display,
+                "definitions": definitions
+            })
+
+        processed_data.append({
+            "character": particle.character,
+            "parts_of_speech": parts
+        })
+
+    return jsonify({
+        "data": processed_data,
+        "pagination": {
+            "page": page,
+            "per_page": per_page,
+            "total_pages": pagination.pages
+        }
+    })
 @app.route('/personal')
 def personal():
     return render_template('personal.html')

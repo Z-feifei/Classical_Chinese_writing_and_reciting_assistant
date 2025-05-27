@@ -1,0 +1,265 @@
+/* ========== 配色方案 ========== */
+:root {
+    --sidebar-bg: #562B08;
+    --main-bg: #FFF7F0;
+    --card-bg: #FFFFFF;
+    --primary-text: #333;
+    --secondary-text: #666;
+    --accent-color: #8B4513;
+    --gold: #FFD700;
+}
+
+/* ========== 基础布局 ========== */
+body {
+    margin: 0;
+    font-family: "SimSun", "宋体", serif;
+    color: var(--primary-text);
+    display: flex;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* ========== 侧边栏区域 ========== */
+.sidebar {
+    width: 280px;
+    padding: 20px;
+    background: linear-gradient(
+        175deg,
+        var(--sidebar-bg) 20%,
+        color-mix(in srgb, var(--sidebar-bg) 85%, black) 100%
+    );
+    color: white;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.15);
+}
+
+/* ========== 搜索框样式 ========== */
+.search-box {
+    margin-bottom: 25px;
+    position: relative;
+}
+
+#searchInput {
+    width: 90%;
+    padding: 12px 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    font-size: 0.95em;
+    transition: all 0.3s;
+}
+
+#searchInput:focus {
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.15);
+}
+
+/* ========== 筛选器样式 ========== */
+.filter-container {
+    padding-left: 0;
+}
+.filter-header {
+    margin: 20px 0 15px;
+    font-size: 1.2em;
+    color: var(--gold);
+    padding-left: 8px;
+    border-left: 3px solid currentColor;
+}
+
+.filter-item {
+    list-style: none;
+    position: relative;
+    padding: 12px 20px;
+    margin: 8px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 选中状态指示条 */
+.filter-item::before {
+    content: "";
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 0;
+    background: var(--gold);
+    border-radius: 2px;
+    transition: height 0.3s;
+}
+
+.filter-item.active {
+    background: rgba(255, 255, 255, 0.15);
+    padding-left: 10px;
+}
+
+.filter-item.active::before {
+    height: 60%;
+}
+
+.filter-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ========== 主内容区域 ========== */
+.main-content {
+    flex: 1;
+    padding: 30px 40px 80px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 25px;
+    overflow-y: auto;
+    height: 100vh;
+    scroll-behavior: smooth;
+}
+
+/* ========== 卡片样式 ========== */
+.character-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.character-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* 卡片内容滚动区域 */
+.card-body {
+    overflow-y: auto;
+    flex-grow: 1;
+    padding-top: 15px;
+}
+
+/* ========== 标签样式 ========== */
+.category-tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    background: rgba(86, 43, 8, 0.1);
+    color: var(--accent-color);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85em;
+}
+
+/* ========== 释义样式 ========== */
+.pos-group {
+    margin: 20px 0;
+    padding: 18px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border-left: 3px solid var(--accent-color);
+}
+
+.example {
+    position: relative;
+    padding-left: 30px;
+    margin: 12px 0;
+    color: var(--secondary-text);
+}
+
+/* ========== 分页控件 ========== */
+.pagination-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    padding: 10px 20px;
+    border-radius: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+#pagination button {
+    border: none;
+    background: var(--sidebar-bg);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+#pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========== 滚动条样式 ========== */
+.main-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: var(--sidebar-bg);
+    border-radius: 4px;
+}
+
+.card-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.card-body::-webkit-scrollbar-thumb {
+    background: rgba(86, 43, 8, 0.2);
+    border-radius: 3px;
+}
+
+/* ========== 加载状态 ========== */
+.loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--accent-color);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========== 错误提示 ========== */
+.error {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #dc3545;
+}

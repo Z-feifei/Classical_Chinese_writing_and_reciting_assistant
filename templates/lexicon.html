@@ -2,28 +2,32 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文言文词库</title>
-    <script src="{{ url_for('static', filename='js/lexical.js') }}"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/lexical.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/lexicon.css') }}">
 </head>
 <body>
     <aside class="sidebar">
         <div class="search-box">
-            <input type="text" id="searchInput" placeholder="搜索汉字、拼音...">
+            <input type="text" id="searchInput" placeholder="输入汉字...">
         </div>
 
-        <ul class="pos-filter">
-            <li class="pos-item">动词</li>
-            <li class="pos-item">名词</li>
-            <li class="pos-item">形容词</li>
-            <li class="pos-item">代词</li>
-        </ul>
+        <!-- 添加筛选器容器 -->
+        <div class="filter-container">
+            <h3 class="filter-header">词性筛选</h3>
+            <ul class="pos-filter" id="posFilter">
+                <!-- 分类标签通过JS动态生成 -->
+            </ul>
+        </div>
     </aside>
 
     <main class="main-content" id="contentArea">
-        <!-- 卡片通过JS动态生成 -->
+        <!-- 卡片内容动态生成 -->
     </main>
 
+    <div id="pagination" class="pagination-container"></div>
+
+    <script src="{{ url_for('static', filename='js/lexicon.js') }}"></script>
 </body>
 </html>
