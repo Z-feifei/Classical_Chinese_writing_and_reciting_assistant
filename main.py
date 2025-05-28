@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import and_, or_
 
 import UseModel
 import split
@@ -209,32 +210,55 @@ def regenerate_model(nums):
     return {'questions': questions, 'answers': answers}
 
 
-# 正确配置应改为：
-@app.route('/lexicon', endpoint='lexicon')
-def lexicon_page():
-    """词库页面路由"""
-    return render_template('lexicon.html')
-
 
 @app.route('/api/lexicon')
 def lexicon_data():
-    """词库数据API（仅按词名搜索）"""
+    """词库数据API（支持搜索和分类筛选）"""
     # 获取请求参数
     page = request.args.get('page', 1, type=int)
-    search_query = request.args.get('q', '').strip()  # 搜索词参数
+    search_query = request.args.get('q', '').strip()
+    categories = request.args.get('categories', '').split(',') if 'categories' in request.args else []
     per_page = 3
     main_categories = {'连词', '助词', '语气词', '比况词', '代词', '副词', '介词', '形容词'}
 
     # 构建基础查询
     base_query = LexicalParticle.query
 
-    # 添加搜索过滤（仅按词名搜索）
-    if search_query:
-        base_query = base_query.filter(
-            LexicalParticle.character.ilike(f'%{search_query}%')
-        )
+    # 分类过滤条件
+    category_filters = []
+    if categories:
+        # 特殊处理"其他"分类
+        other_selected = '其他' in categories
+        valid_categories = [c for c in categories if c in main_categories or c == '其他']
 
-    # 执行分页查询（优化查询性能）
+        # 构建分类条件
+        if valid_categories:
+            conditions = []
+            if '其他' in valid_categories:
+                # 其他分类的条件：原分类不在主分类列表中
+                conditions.append(~PartOfSpeech.category.in_(main_categories))
+                valid_categories.remove('其他')
+            if valid_categories:
+                conditions.append(PartOfSpeech.category.in_(valid_categories))
+
+            if conditions:
+                category_filters = [or_(*conditions)] if len(conditions) > 1 else conditions
+
+    # 搜索条件
+    search_filters = []
+    if search_query:
+        search_filters.append(LexicalParticle.character.ilike(f'%{search_query}%'))
+
+    # 组合所有条件
+    if category_filters or search_filters:
+        base_query = base_query.join(PartOfSpeech)
+        if category_filters and search_filters:
+            base_query = base_query.filter(and_(*category_filters, *search_filters))
+        else:
+            base_query = base_query.filter(or_(*(category_filters + search_filters)))
+        base_query = base_query.distinct()
+
+    # 执行分页查询（优化关联加载）
     pagination = base_query.options(
         db.joinedload(LexicalParticle.parts_of_speech)
           .joinedload(PartOfSpeech.definitions)
@@ -250,7 +274,7 @@ def lexicon_data():
     for particle in pagination.items:
         parts = []
         for pos in particle.parts_of_speech:
-            # 处理主要分类
+            # 分类处理
             main_cat = pos.category if pos.category in main_categories else '其他'
             display = f"{pos.category}{f'({pos.sub_category})' if pos.sub_category else ''}"
 
@@ -280,6 +304,10 @@ def lexicon_data():
             "total_items": pagination.total
         }
     })
+@app.route('/lexicon', endpoint='lexicon')
+def lexicon_page():
+    """词库页面路由"""
+    return render_template('lexicon.html')
 @app.route('/personal')
 def personal():
     return render_template('personal.html')
