@@ -218,24 +218,43 @@ def lexicon_page():
 
 @app.route('/api/lexicon')
 def lexicon_data():
-    """词库数据API"""
+    """词库数据API（仅按词名搜索）"""
+    # 获取请求参数
     page = request.args.get('page', 1, type=int)
+    search_query = request.args.get('q', '').strip()  # 搜索词参数
     per_page = 3
     main_categories = {'连词', '助词', '语气词', '比况词', '代词', '副词', '介词', '形容词'}
 
-    pagination = LexicalParticle.query.paginate(
+    # 构建基础查询
+    base_query = LexicalParticle.query
+
+    # 添加搜索过滤（仅按词名搜索）
+    if search_query:
+        base_query = base_query.filter(
+            LexicalParticle.character.ilike(f'%{search_query}%')
+        )
+
+    # 执行分页查询（优化查询性能）
+    pagination = base_query.options(
+        db.joinedload(LexicalParticle.parts_of_speech)
+          .joinedload(PartOfSpeech.definitions)
+          .joinedload(Definition.examples)
+    ).paginate(
         page=page,
         per_page=per_page,
         error_out=False
     )
 
+    # 处理返回数据
     processed_data = []
     for particle in pagination.items:
         parts = []
         for pos in particle.parts_of_speech:
+            # 处理主要分类
             main_cat = pos.category if pos.category in main_categories else '其他'
-            display = f"{pos.category}"
+            display = f"{pos.category}{f'({pos.sub_category})' if pos.sub_category else ''}"
 
+            # 处理定义和例句
             definitions = [{
                 "definition": d.definition,
                 "examples": [e.example for e in d.examples]
@@ -257,7 +276,8 @@ def lexicon_data():
         "pagination": {
             "page": page,
             "per_page": per_page,
-            "total_pages": pagination.pages
+            "total_pages": pagination.pages,
+            "total_items": pagination.total
         }
     })
 @app.route('/personal')
