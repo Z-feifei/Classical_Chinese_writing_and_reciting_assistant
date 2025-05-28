@@ -47,6 +47,7 @@
             border-radius: 10px;
             padding: 20px;
             margin-right: 20px;
+            height: fit-content;
         }
         .sidebar-menu {
             list-style: none;
@@ -62,9 +63,13 @@
             color: #333;
             text-decoration: none;
             font-size: 14px;
+            padding: 8px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
         }
-        .sidebar-menu li a:hover {
-            color: #6d4427;
+        .sidebar-menu li a:hover, .sidebar-menu li a.active {
+            background-color: #6d4427;
+            color: white;
         }
         .sidebar-menu li a i {
             margin-right: 10px;
@@ -77,12 +82,16 @@
             flex-direction: column;
             gap: 20px;
         }
-        .profile-card {
+        .content-section {
             background-color: rgba(255, 255, 255, 0.9);
             border-radius: 10px;
             padding: 20px;
+            display: none;
         }
-        .profile-header {
+        .content-section.active {
+            display: block;
+        }
+        .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -90,7 +99,7 @@
             padding-bottom: 10px;
             border-bottom: 1px solid #eee;
         }
-        .profile-header h2 {
+        .section-header h2 {
             margin: 0;
             color: #333;
             font-size: 18px;
@@ -98,17 +107,30 @@
         .profile-info {
             display: flex;
             gap: 30px;
+            align-items: center;
         }
         .profile-avatar {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background-color: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 24px;
+            font-size: 36px;
             color: #6d4427;
+            position: relative;
+            cursor: pointer;
+            border: 3px solid #6d4427;
+        }
+        .profile-avatar:hover::after {
+            content: "点击修改";
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            color: #666;
         }
         .profile-details {
             flex: 1;
@@ -121,23 +143,38 @@
             color: #333;
             margin-right: 5px;
         }
-        .study-records {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-radius: 10px;
-            padding: 20px;
-        }
-        .study-header {
+        .editable-field {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+            gap: 10px;
         }
-        .study-header h2 {
-            margin: 0;
-            color: #333;
-            font-size: 18px;
+        .editable-field input {
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+        }
+        .editable-field.editing input {
+            display: inline-block;
+        }
+        .editable-field.editing span {
+            display: none;
+        }
+        .edit-btn, .save-btn, .cancel-btn {
+            background-color: #6d4427;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        .save-btn {
+            background-color: #28a745;
+        }
+        .cancel-btn {
+            background-color: #dc3545;
         }
         .study-stats {
             display: flex;
@@ -164,6 +201,8 @@
         .record-list {
             border-top: 1px solid #eee;
             padding-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
         }
         .record-item {
             border-bottom: 1px solid #eee;
@@ -179,19 +218,94 @@
         .record-item strong {
             color: #333;
         }
-        .logout-btn {
-            background-color: #f44336;
+        .action-btn {
+            background-color: #6d4427;
             color: white;
             border: none;
             padding: 8px 15px;
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            margin-right: 10px;
         }
-        .logout-btn:hover {
-            background-color: #d32f2f;
+        .action-btn.danger {
+            background-color: #dc3545;
+        }
+        .action-btn:hover {
+            opacity: 0.8;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 300px;
+            text-align: center;
+        }
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+        .favorite-item {
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #6d4427;
+        }
+        .favorite-item h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .favorite-item p {
+            color: #666;
+            margin: 5px 0;
+            line-height: 1.5;
+        }
+        .favorite-item .actions {
+            margin-top: 10px;
+            display: flex;
+            gap: 10px;
+        }
+        .favorite-item .btn-small {
+            padding: 3px 8px;
+            font-size: 12px;
+            border-radius: 3px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-small.view {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .btn-small.delete {
+            background-color: #dc3545;
+            color: white;
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="header">
@@ -205,35 +319,69 @@
     <div class="main-container">
         <div class="sidebar">
             <ul class="sidebar-menu">
-                <li><a href="#"><i>👤</i> 个人基本信息</a></li>
-                <li><a href="#"><i>📚</i> 收藏</a></li>
-                <li><a href="{{ url_for('history') }}"><i>📝</i> 学习记录</a></li>
-                <li><a href="#"><i>⚙️</i> 账号管理</a></li>
-                <li><a href="{{ url_for('logout') }}"><i>🚪</i> 退出</a></li>
+                <li><a href="#profile-info" class="nav-link active" data-target="profile-info"><i class="fas fa-user"></i> 个人基本信息</a></li>
+                <li><a href="#favorites" class="nav-link" data-target="favorites"><i class="fas fa-heart"></i> 收藏</a></li>
+                <li><a href="#study-records" class="nav-link" data-target="study-records"><i class="fas fa-book"></i> 学习记录</a></li>
+                <li><a href="#account-settings" class="nav-link" data-target="account-settings"><i class="fas fa-cog"></i> 账号管理</a></li>
+                <li><a href="#" onclick="showLogoutModal()"><i class="fas fa-sign-out-alt"></i> 退出</a></li>
             </ul>
         </div>
         
         <div class="content-area">
-            <div class="profile-card">
-                <div class="profile-header">
+            <!-- 个人基本信息 -->
+            <div id="profile-info" class="content-section active">
+                <div class="section-header">
                     <h2>个人基本信息</h2>
-                    <button class="edit-btn">修改</button>
                 </div>
                 
                 <div class="profile-info">
-                    <div class="profile-avatar">
+                    <div class="profile-avatar" onclick="changeAvatar()">
                         {{ user.username[0] | upper }}
                     </div>
                     <div class="profile-details">
                         <p><strong>用户名:</strong> {{ user.username }}</p>
+                        <div class="editable-field" id="personal-tag-field">
+                            <strong>个性标签:</strong>
+                            <span>{{ user.personal_tag or '暂无个性标签' }}</span>
+                            <input type="text" value="{{ user.personal_tag or '' }}" placeholder="输入个性标签">
+                            <button class="edit-btn" onclick="editField('personal-tag-field')">修改</button>
+                        </div>
                         <p><strong>邮箱:</strong> {{ user.email }}</p>
                         <p><strong>注册时间:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                     </div>
                 </div>
             </div>
             
-            <div class="study-records">
-                <div class="study-header">
+            <!-- 收藏 -->
+            <div id="favorites" class="content-section">
+                <div class="section-header">
+                    <h2>我的收藏</h2>
+                    <span>共 {{ user.favorites|length }} 项</span>
+                </div>
+                
+                {% if user.favorites %}
+                    {% for favorite in user.favorites %}
+                        <div class="favorite-item">
+                            <h4>{{ favorite.title }}</h4>
+                            <p>{{ favorite.content[:200] }}{% if favorite.content|length > 200 %}...{% endif %}</p>
+                            <p><small>收藏时间：{{ favorite.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+                            <div class="actions">
+                                <button class="btn-small view" onclick="viewFavorite('{{ favorite.id }}')">查看全文</button>
+                                <button class="btn-small delete" onclick="deleteFavorite('{{ favorite.id }}')">删除</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-heart"></i>
+                        <p>暂无收藏内容</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- 学习记录 -->
+            <div id="study-records" class="content-section">
+                <div class="section-header">
                     <h2>学习记录</h2>
                     <a href="{{ url_for('history') }}">查看全部</a>
                 </div>
@@ -249,24 +397,176 @@
                     </div>
                     <div class="stat-card">
                         <h3>学习进度</h3>
-                        <div class="value">{{ (user.study_records|length / 100 * 100)|int }}%</div>
+                        <div class="value">{{ (user.study_records|length * 5)|int }}%</div>
                     </div>
                 </div>
                 
-                <div class="record-list">
-                    {% if records %}
+                {% if records %}
+                    <div class="record-list">
                         {% for record in records %}
                             <div class="record-item">
                                 <p><strong>学习时间:</strong> {{ record.study_time.strftime('%Y-%m-%d %H:%M') }}</p>
                                 <p><strong>文章内容:</strong> {{ record.article_content[:100] }}{% if record.article_content|length > 100 %}...{% endif %}</p>
+                                {% if record.score %}
+                                    <p><strong>得分:</strong> {{ record.score }}</p>
+                                {% endif %}
                             </div>
                         {% endfor %}
-                    {% else %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-book"></i>
                         <p>暂无学习记录</p>
-                    {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- 账号管理 -->
+            <div id="account-settings" class="content-section">
+                <div class="section-header">
+                    <h2>账号管理</h2>
+                </div>
+                
+                <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
+                    <p><strong>绑定邮箱:</strong> {{ user.email }}</p>
+                    <button class="action-btn" onclick="location.href='{{ url_for('reset_password') }}'">
+                        <i class="fas fa-key"></i> 修改密码
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- 退出确认模态框 -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <h3>确认退出</h3>
+            <p>是否退出当前账号？</p>
+            <div class="modal-buttons">
+                <button class="action-btn" onclick="confirmLogout()">退出</button>
+                <button class="action-btn" onclick="closeModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 导航切换
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // 移除所有active类
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                
+                // 添加active类
+                this.classList.add('active');
+                const targetId = this.getAttribute('data-target');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+
+        // 编辑字段
+        function editField(fieldId) {
+            const field = document.getElementById(fieldId);
+            const isEditing = field.classList.contains('editing');
+            
+            if (isEditing) {
+                // 保存
+                const input = field.querySelector('input');
+                const span = field.querySelector('span');
+                const newValue = input.value;
+                
+                // 这里可以添加AJAX请求保存到服务器
+                fetch('/update_profile', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `field=personal_tag&value=${encodeURIComponent(newValue)}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        span.textContent = newValue || '暂无个性标签';
+                        field.classList.remove('editing');
+                        field.querySelector('button').textContent = '修改';
+                    }
+                });
+            } else {
+                // 编辑
+                field.classList.add('editing');
+                field.querySelector('button').textContent = '保存';
+                field.querySelector('input').focus();
+            }
+        }
+
+        // 更换头像
+        function changeAvatar() {
+            const avatars = ['😊', '🎓', '📚', '✏️', '🌟', '🎯', '💡', '🔥'];
+            const current = document.querySelector('.profile-avatar').textContent.trim();
+            let next = avatars[Math.floor(Math.random() * avatars.length)];
+            
+            // 确保不是同一个头像
+            while (next === current) {
+                next = avatars[Math.floor(Math.random() * avatars.length)];
+            }
+            
+            document.querySelector('.profile-avatar').textContent = next;
+            
+            // 保存到服务器
+            fetch('/update_profile', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `field=avatar&value=${encodeURIComponent(next)}`
+            });
+        }
+
+        // 显示退出模态框
+        function showLogoutModal() {
+            document.getElementById('logoutModal').style.display = 'block';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('logoutModal').style.display = 'none';
+        }
+
+        // 确认退出
+        function confirmLogout() {
+            window.location.href = '{{ url_for("logout") }}';
+        }
+
+        // 查看收藏详情
+        function viewFavorite(id) {
+            // 这里可以打开详情页面或模态框
+            alert('查看收藏详情功能待实现');
+        }
+
+        // 删除收藏
+        function deleteFavorite(id) {
+            if (confirm('确定要删除这个收藏吗？')) {
+                fetch(`/delete_favorite/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    }
+                });
+            }
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function(event) {
+            const modal = document.getElementById('logoutModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
 </body>
 </html>
