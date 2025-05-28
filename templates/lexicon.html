@@ -9,11 +9,17 @@
 </head>
 <body>
     <aside class="sidebar">
+        <!-- 添加导航图标容器 -->
+        <div class="icon-container">
+            <a href="{{ url_for('home') }}" class="icon-link" title="返回首页" style="color: #FFF7F0;">
+                <i class="fas fa-home"></i>
+            </a>
+        </div>
+
         <div class="search-box">
             <input type="text" id="searchInput" placeholder="输入汉字...">
         </div>
 
-        <!-- 添加筛选器容器 -->
         <div class="filter-container">
             <h3 class="filter-header">词性筛选</h3>
             <ul class="pos-filter" id="posFilter">
