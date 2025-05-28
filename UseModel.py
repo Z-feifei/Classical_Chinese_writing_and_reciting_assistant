@@ -4,6 +4,8 @@ import os
 from functools import lru_cache
 from erniebot_agent.chat_models import ERNIEBot
 from erniebot_agent.memory import HumanMessage, AIMessage, WholeMemory
+import nest_asyncio
+nest_asyncio.apply()
 
 os.environ["EB_AGENT_ACCESS_TOKEN"] = "bc95814b38c92d4c1fc9c124cdb0d8c4ea0aacbd"
 
