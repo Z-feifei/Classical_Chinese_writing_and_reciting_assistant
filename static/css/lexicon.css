@@ -59,8 +59,10 @@ body {
 
 /* ========== 筛选器样式 ========== */
 .filter-container {
-    padding-left: 0;
+    padding-left: 10px;
+    /* 移除原来的checkbox定位样式 */
 }
+
 .filter-header {
     margin: 20px 0 15px;
     font-size: 1.2em;
@@ -71,42 +73,35 @@ body {
 
 .filter-item {
     list-style: none;
-    position: relative;
     padding: 12px 20px;
     margin: 8px 0;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* 添加点击反馈 */
+    user-select: none;
 }
 
-/* 选中状态指示条 */
-.filter-item::before {
-    content: "";
-    position: absolute;
-    left: -8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 0;
-    background: var(--gold);
-    border-radius: 2px;
-    transition: height 0.3s;
-}
-
+/* 选中状态 */
 .filter-item.active {
     background: rgba(255, 255, 255, 0.15);
-    padding-left: 10px;
+    color: var(--gold);
+    font-weight: 500;
+    position: relative;
 }
 
-.filter-item.active::before {
-    height: 60%;
+/* 选中标记 */
+.filter-item.active::after {
+    content: "✓";
+    position: absolute;
+    right: 15px;
+    opacity: 0.8;
 }
 
 .filter-item:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
 }
-
 /* ========== 主内容区域 ========== */
 .main-content {
     flex: 1;

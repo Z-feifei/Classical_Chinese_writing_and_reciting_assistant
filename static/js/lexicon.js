@@ -15,19 +15,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     let totalPages = 1;
 
-    // 初始化筛选器
+    // 初始化筛选器（无复选框版本）
     function initFilters() {
-        // 清空现有筛选项
         domElements.posFilter.innerHTML = '';
 
-        // 动态生成分类筛选
         MAIN_CATEGORIES.forEach(category => {
             const li = document.createElement('li');
             li.className = 'filter-item';
-            li.innerHTML = `
-                <input type="checkbox" id="filter-${category}" value="${category}">
-                <label for="filter-${category}">${category}</label>
-            `;
+            li.dataset.category = category;
+            li.textContent = category;
             domElements.posFilter.appendChild(li);
         });
     }
@@ -46,20 +42,28 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCards(filtered);
     }
 
-    // 事件处理器：分类筛选
+    // 事件处理器：分类筛选（新版）
     function handleFilterClick(event) {
-        const checkbox = event.target.closest('input[type="checkbox"]');
-        if (!checkbox) return;
+        const li = event.target.closest('.filter-item');
+        if (!li) return;
 
+        // 切换选中状态
+        li.classList.toggle('active');
+
+        // 获取当前选中分类
         const selectedCategories = Array.from(
-            document.querySelectorAll('input[type="checkbox"]:checked')
-        ).map(cb => cb.value);
+            document.querySelectorAll('.filter-item.active')
+        ).map(item => item.dataset.category);
 
-        const filtered = currentData.filter(char =>
-            selectedCategories.some(cat =>
-                char.parts_of_speech.some(pos => pos.main_category === cat)
-            )
-        );
+        // 执行筛选
+        const filtered = selectedCategories.length === 0
+            ? currentData
+            : currentData.filter(char =>
+                selectedCategories.some(cat =>
+                    char.parts_of_speech.some(pos => pos.main_category === cat)
+                )
+            );
+
         renderCards(filtered);
     }
 
@@ -89,15 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // 初始化加载
-    initFilters();
-    loadPage(1);
-
-    // 事件监听绑定
-    domElements.searchInput.addEventListener('input', handleSearch);
-    domElements.posFilter.addEventListener('click', handleFilterClick);
-    domElements.pagination.addEventListener('click', handlePagination);
-
+    // 分页加载
     async function loadPage(page) {
         try {
             showLoading();
@@ -117,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 渲染卡片
     function renderCards(data) {
         domElements.contentArea.innerHTML = data.map(char => `
             <div class="character-card">
@@ -149,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `).join('');
     }
 
+    // 更新分页控件
     function updatePagination() {
         domElements.pagination.innerHTML = `
             <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} data-page="${currentPage - 1}">
@@ -161,11 +159,22 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
+    // 分页事件处理
     function handlePagination(event) {
         const target = event.target.closest('.page-btn');
         if (!target) return;
         loadPage(parseInt(target.dataset.page));
     }
 
-    // 其他辅助函数...
+    // 事件绑定
+    function bindEvents() {
+        domElements.searchInput.addEventListener('input', handleSearch);
+        domElements.posFilter.addEventListener('click', handleFilterClick);
+        domElements.pagination.addEventListener('click', handlePagination);
+    }
+
+    // 初始化流程
+    initFilters();
+    bindEvents();
+    loadPage(1);
 });
