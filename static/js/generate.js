@@ -3,14 +3,15 @@ function getQueryParams() {
     const queryParams = {};
     for (const [key, value] of params.entries()) {
         try {
-            queryParams[key] = JSON.parse(value);
+            // 尝试解析JSON格式的数据
+            queryParams[key] = JSON.parse(decodeURIComponent(value));
         } catch {
+            // 如果解析失败，保留原始字符串值
             queryParams[key] = value;
         }
     }
     return queryParams;
 }
-
 function handleSubmit() {
     const article = document.getElementById('article').value;
     const ratings = {
@@ -65,9 +66,18 @@ function handleSubmit() {
 
 function toggleText1(type) {
     let content = document.getElementById("text1-content");
-    content.innerText = text1Content[type].trim();
-    //let indicator = document.getElementById("indicator1");
-    //indicator.style.left = type === 'original' ? '0' : '50%';
+    if (!content) return;
+
+    // 使用全局变量中的文本内容
+    if (window.text1Content[type]) {
+        content.innerText = window.text1Content[type].trim();
+    }
+
+    // 更新指示器位置
+    let indicator = document.getElementById("indicator1");
+    if (indicator) {
+        indicator.style.left = type === 'article' ? '0' : '50%';
+    }
 }
 
 function toggleText2(type, num) {
@@ -91,6 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     text1Content = {
         article: params.article || '',
+        translation: params.translation || ''
     };
 
     text2Content = {

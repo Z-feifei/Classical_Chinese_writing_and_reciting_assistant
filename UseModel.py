@@ -120,8 +120,9 @@ BASE_PROMPTS = {
                              "\n    1.生成的题目需要是简答题，要求考生针对文言文中的某个问题进行回答。"
                              "\n    2.如果题目难度高，需要在题目中含有所给文言文中的句子，要求学生对句子进行分析和作答。 "
                              "\n    3.提供详细的答案，并解释相关文言文中的重难点词汇。"
-                             "\n格式要求：你应当严格按照\n\n**题目**：\n[题目内容]\n\n**答案**：\n[答案内容]\n\n**解析**：\n[解析内容]\n\n的txt格式回答"),
+                             "\n格式要求：你应当严格按照\n\n**题目**：\n[题目内容]\n\n**答案**：\n[答案内容]\n\n**解析**：\n[解析内容]\n\n的txt格式回答")
 }
+
 
 
 async def create_memory_with_prompts(prompt_key):
@@ -166,6 +167,53 @@ async def optimized_chat(prompt_key, content, difficulty):
                 raise
             await asyncio.sleep(0.5 * (attempt + 1))
 
+
+@alru_cache(maxsize=32)
+async def generate_translation(text):
+    """生成文言文的现代汉语译文"""
+    print("开始生成译文")
+    translation_prompt = f"""
+    你是一名专业的古汉语翻译专家。请将下面这段文言文翻译成流畅的现代汉语。
+    要求：
+    1. 直译为主，意译为辅
+    2. 保持原文的语言风格和修辞特点
+    3. 对特殊文言现象（如通假字、词类活用等）给出必要说明
+
+    文言文：
+    {text}
+
+    请按照以下格式返回结果：
+    **译文**：
+    [现代汉语翻译]
+
+    **注释**：
+    [对特殊文言现象的解释]
+    """
+
+    memory = WholeMemory()
+    memory.add_messages([
+        HumanMessage("角色设定：专业古籍翻译专家"),
+        AIMessage("好的，请提供需要翻译的文言文内容"),
+        HumanMessage(translation_prompt)
+    ])
+
+    # 带重试机制的模型调用
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = await get_ernie_model().chat(messages=memory.get_messages())
+            print("翻译结束")
+            return response
+        except Exception as e:
+            if attempt == max_retries - 1:
+                raise
+            await asyncio.sleep(0.5 * (attempt + 1))
+
+
+@alru_cache(maxsize=32)
+async def TR():
+    print("开始翻译")
+    return await generate_translation(content)
 
 @alru_cache(maxsize=32)
 async def Q1():

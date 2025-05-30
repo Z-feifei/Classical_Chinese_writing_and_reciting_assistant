@@ -3,8 +3,6 @@ import re
 
 def separate_questions_answers(text, nums):
     # 使用正则表达式提取题目和答案
-    # questions = re.findall(r'(?<=【题目】)[\s\S]*?(?=【答案】)', text)
-    # answers_with_explanations = re.findall(r'(?<=【答案】)[\s\S]*?(?=【题目】|\Z)', text)
     questions = re.findall(r'(?<=\*\*题目\*\*：)[\s\S]*?(?=\*\*答案\*\*：)', text)
     answers_with_explanations = re.findall(r'(?<=\*\*答案\*\*：)[\s\S]*?(?=\*\*题目\*\*：|\Z)', text)
 
@@ -34,6 +32,20 @@ def separate_questions_answers(text, nums):
     result = {
         "questions": questions_dict,
         "answers": answers_dict
+    }
+
+    return result
+
+def separate_translation_notes(text):
+    translation_match = re.findall(r"\*\*译文\*\*:\s*(.+?)(?=\n\*\*|$)", text)
+    notes_match = re.findall(r"\*\*注释\*\*:\s*(.+?)(?=\n\*\*|$)", text)
+
+    translation = translation_match.group(1).strip() if translation_match else ""
+    notes = notes_match.group(1).strip() if notes_match else ""
+
+    result = {
+        "translation": translation,
+        "note": notes
     }
 
     return result

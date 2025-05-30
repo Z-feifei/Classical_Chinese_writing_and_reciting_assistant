@@ -391,9 +391,6 @@ def logout():
 def exercise():
     return render_template('exercise.html')
 
-#@app.route('/recite')
-#def recite():
-#    return render_template('recite.html')
 
 @app.route('/recite')
 def recite():
@@ -450,9 +447,6 @@ def familiar():
         os.remove(file_path)
     return render_template('next1.html')
 
-#@app.route('/next')
-#def next_page():
-#    return render_template('next.html')
 
 @app.route('/generate', methods=['POST'])
 @limiter.limit("2 per second")
@@ -492,10 +486,23 @@ def generate():
 
         # 调用generate_model生成结果
         result = generate_model('generate.txt')
+
+        # 在全局事件循环中执行异步任务
+        async def async_wrapper():
+            # 同时生成译文的两个部分（主翻译+注释）
+            translation_task = limited_execute(UseModel.TR)
+            return await translation_task
+
+        # 在同步视图中运行异步任务
+        translation = global_loop.run_until_complete(async_wrapper())
+        print(translation.content)
+
+
         return jsonify({
             'article': article,
             'questions': result['questions'],
-            'answers': result['answers']
+            'answers': result['answers'],
+            'translation': translation.content
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -554,8 +561,6 @@ def regenerate_model(nums):
         questions[f'question{num}'] = result['questions'][f'question{num}']
         answers[f'answer{num}'] = result['answers'][f'answer{num}']
     return {'questions': questions, 'answers': answers}
-
-
 
 @app.route('/api/lexicon')
 def lexicon_data():
