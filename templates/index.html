@@ -23,14 +23,13 @@
             align-items: center;
             height: 100vh;
             background-image: url('/static/images/img.png');
-            background-size: cover; /* 让背景图像覆盖整个区域 */
-            background-position: center; /* 使背景图像居中显示 */
-            background-repeat: no-repeat; /* 防止背景重复 */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
         }
 
-
         .container {
-            background-color: rgba(255, 255, 255, 0.8); /* 透明白色背景 */
+            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
             max-width: 1000px;
@@ -39,14 +38,39 @@
             padding-bottom: 30px;
         }
 
-
         .header {
-            position: relative; /* 新增 */
+            position: relative;
             background-color: #6d4427;
             border-radius: 10px 10px 0 0;
             color: white;
             padding: 10px;
             font-size: 1.5em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            flex: 1;
+            text-align: center;
+        }
+
+        .header-nav {
+            display: flex;
+            gap: 15px;
+        }
+
+        .header-nav a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .header-nav a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
         }
 
         .content {
@@ -94,6 +118,7 @@
             cursor: pointer;
             margin-top: 20px;
         }
+
         .icon-container {
             position: absolute;
             top: 20px;
@@ -116,102 +141,218 @@
         .icon-link:hover {
             transform: scale(1.1);
         }
+
+        .flash-messages {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .flash-message {
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            color: white;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .flash-message.success {
+            background-color: #28a745;
+        }
+
+        .flash-message.error {
+            background-color: #dc3545;
+        }
+
+        .flash-message.info {
+            background-color: #17a2b8;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .login-required-msg {
+            background-color: rgba(255, 193, 7, 0.9);
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="icon-container">
-        <a href="{{ url_for('lexicon') }}" class="icon-link" title="实词库">
-            <i class="fas fa-book-open"></i>
-        </a>
-        <a href="{{ url_for('personal') }}" class="icon-link" title="个人中心">
-            <i class="fas fa-user-circle"></i>
-        </a>
-    </div>
-    <div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
-    <div class="content">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
-        <div id="carousel">
-           <img src="/static/images/carousel1.png" alt="Placeholder 1" id="carousel1">
-            <img src="/static/images/carousel2.png" alt="Placeholder 2" id="carousel2">
-            <img src="/static/images/carousel3.png" alt="Placeholder 3" id="carousel3">
-            <img src="/static/images/carousel4.png" alt="Placeholder 4" id="carousel4">
-            <img src="/static/images/carousel5.png" alt="Placeholder 5" id="carousel5">
-            <img src="/static/images/carousel6.png" alt="Placeholder 6" id="carousel6">
+    <div class="container">
+        <div class="icon-container">
+            <a href="{{ url_for('lexicon') }}" class="icon-link" title="实词库">
+                <i class="fas fa-book-open"></i>
+            </a>
+            {% if session.user_id %}
+                <a href="{{ url_for('profile') }}" class="icon-link" title="个人中心">
+                    <i class="fas fa-user-circle"></i>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="icon-link" title="登录">
+                    <i class="fas fa-sign-in-alt"></i>
+                </a>
+            {% endif %}
         </div>
 
-        <textarea id="article" placeholder="在此处输入文章内容"></textarea>
-        <div class="ratings">
-            <span style="font-weight: bold;">选择题目难度：</span>
-            <div class="rating-item">
-                <span>第一题</span>
-                <div class="stars">
-                    <input type="radio" id="first1" name="first" value=1>
-                    <label for="first1">★</label>
-                    <input type="radio" id="first2" name="first" value=2>
-                    <label for="first2">★</label>
-                    <input type="radio" id="first3" name="first" value=3>
-                    <label for="first3">★</label>
-                    <input type="radio" id="first4" name="first" value=4>
-                    <label for="first4">★</label>
-                </div>
-            </div>
-            <div class="rating-item">
-                <span>第二题</span>
-                <div class="stars">
-                    <input type="radio" id="second1" name="second" value=1>
-                    <label for="second1">★</label>
-                    <input type="radio" id="second2" name="second" value=2>
-                    <label for="second2">★</label>
-                    <input type="radio" id="second3" name="second" value=3>
-                    <label for="second3">★</label>
-                    <input type="radio" id="second4" name="second" value=4>
-                    <label for="second4">★</label>
-                </div>
-            </div>
-            <div class="rating-item">
-                <span>第三题</span>
-                <div class="stars">
-                    <input type="radio" id="third1" name="third" value=1>
-                    <label for="third1">★</label>
-                    <input type="radio" id="third2" name="third" value=2>
-                    <label for="third2">★</label>
-                    <input type="radio" id="third3" name="third" value=3>
-                    <label for="third3">★</label>
-                    <input type="radio" id="third4" name="third" value=4>
-                    <label for="third4">★</label>
-                </div>
-            </div>
-            <div class="rating-item">
-                <span>第四题</span>
-                <div class="stars">
-                    <input type="radio" id="fourth1" name="fourth" value=1>
-                    <label for="fourth1">★</label>
-                    <input type="radio" id="fourth2" name="fourth" value=2>
-                    <label for="fourth2">★</label>
-                    <input type="radio" id="fourth3" name="fourth" value=3>
-                    <label for="fourth3">★</label>
-                    <input type="radio" id="fourth4" name="fourth" value=4>
-                    <label for="fourth4">★</label>
-                </div>
-            </div>
-            <div class="rating-item">
-                <span>第五题</span>
-                <div class="stars">
-                    <input type="radio" id="fifth1" name="fifth" value=1>
-                    <label for="fifth1">★</label>
-                    <input type="radio" id="fifth2" name="fifth" value=2>
-                    <label for="fifth2">★</label>
-                    <input type="radio" id="fifth3" name="fifth" value=3>
-                    <label for="fifth3">★</label>
-                    <input type="radio" id="fifth4" name="fifth" value=4>
-                    <label for="fifth4">★</label>
-                </div>
+        <div class="header">
+            <div class="header-title">让经史子集走进课堂——文言文出题及背诵助手</div>
+            <div class="header-nav">
+                <a href="{{ url_for('home') }}">首页</a>
+                {% if session.user_id %}
+                    <span>欢迎，{{ session.username }}</span>
+                    <a href="{{ url_for('profile') }}">个人中心</a>
+                    <a href="{{ url_for('logout') }}">退出</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">登录</a>
+                    <a href="{{ url_for('register') }}">注册</a>
+                {% endif %}
             </div>
         </div>
-        <button class="submit-btn" onclick="handleSubmit()">生成题目</button>
-    </div>
-</div>
 
+        <div class="content">
+            {% if not session.user_id %}
+                <div class="login-required-msg">
+                    <i class="fas fa-info-circle"></i>
+                    请先<a href="{{ url_for('login') }}" style="color: #6d4427; text-decoration: none;"><strong>登录</strong></a>后使用出题功能
+                </div>
+            {% endif %}
+
+            <div id="carousel">
+                <img src="/static/images/carousel1.png" alt="Placeholder 1" id="carousel1">
+                <img src="/static/images/carousel2.png" alt="Placeholder 2" id="carousel2">
+                <img src="/static/images/carousel3.png" alt="Placeholder 3" id="carousel3">
+                <img src="/static/images/carousel4.png" alt="Placeholder 4" id="carousel4">
+                <img src="/static/images/carousel5.png" alt="Placeholder 5" id="carousel5">
+                <img src="/static/images/carousel6.png" alt="Placeholder 6" id="carousel6">
+            </div>
+
+            <textarea id="article" placeholder="在此处输入文章内容" {% if not session.user_id %}disabled{% endif %}></textarea>
+
+            <div class="ratings">
+                <span style="font-weight: bold;">选择题目难度：</span>
+                <div class="rating-item">
+                    <span>第一题</span>
+                    <div class="stars">
+                        <input type="radio" id="first1" name="first" value=1 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="first1">★</label>
+                        <input type="radio" id="first2" name="first" value=2 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="first2">★</label>
+                        <input type="radio" id="first3" name="first" value=3 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="first3">★</label>
+                        <input type="radio" id="first4" name="first" value=4 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="first4">★</label>
+                    </div>
+                </div>
+                <div class="rating-item">
+                    <span>第二题</span>
+                    <div class="stars">
+                        <input type="radio" id="second1" name="second" value=1 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="second1">★</label>
+                        <input type="radio" id="second2" name="second" value=2 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="second2">★</label>
+                        <input type="radio" id="second3" name="second" value=3 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="second3">★</label>
+                        <input type="radio" id="second4" name="second" value=4 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="second4">★</label>
+                    </div>
+                </div>
+                <div class="rating-item">
+                    <span>第三题</span>
+                    <div class="stars">
+                        <input type="radio" id="third1" name="third" value=1 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="third1">★</label>
+                        <input type="radio" id="third2" name="third" value=2 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="third2">★</label>
+                        <input type="radio" id="third3" name="third" value=3 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="third3">★</label>
+                        <input type="radio" id="third4" name="third" value=4 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="third4">★</label>
+                    </div>
+                </div>
+                <div class="rating-item">
+                    <span>第四题</span>
+                    <div class="stars">
+                        <input type="radio" id="fourth1" name="fourth" value=1 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fourth1">★</label>
+                        <input type="radio" id="fourth2" name="fourth" value=2 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fourth2">★</label>
+                        <input type="radio" id="fourth3" name="fourth" value=3 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fourth3">★</label>
+                        <input type="radio" id="fourth4" name="fourth" value=4 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fourth4">★</label>
+                    </div>
+                </div>
+                <div class="rating-item">
+                    <span>第五题</span>
+                    <div class="stars">
+                        <input type="radio" id="fifth1" name="fifth" value=1 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fifth1">★</label>
+                        <input type="radio" id="fifth2" name="fifth" value=2 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fifth2">★</label>
+                        <input type="radio" id="fifth3" name="fifth" value=3 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fifth3">★</label>
+                        <input type="radio" id="fifth4" name="fifth" value=4 {% if not session.user_id %}disabled{% endif %}>
+                        <label for="fifth4">★</label>
+                    </div>
+                </div>
+            </div>
+
+            {% if session.user_id %}
+                <button class="submit-btn" onclick="handleSubmit()">生成题目</button>
+            {% else %}
+                <button class="submit-btn" disabled style="background-color: #ccc; cursor: not-allowed;">请先登录</button>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // 自动隐藏flash消息
+        setTimeout(function() {
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(function(msg) {
+                msg.style.animation = 'slideOut 0.3s ease-out forwards';
+            });
+        }, 3000);
+
+        // 添加slideOut动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideOut {
+                from {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+                to {
+                    opacity: 0;
+                    transform: translateX(100%);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>
