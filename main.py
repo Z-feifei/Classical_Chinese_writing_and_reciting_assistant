@@ -391,9 +391,57 @@ def logout():
 def exercise():
     return render_template('exercise.html')
 
+#@app.route('/recite')
+#def recite():
+#    return render_template('recite.html')
+
 @app.route('/recite')
 def recite():
-    return render_template('recite.html')
+    """单词背诵页面 - 从数据库获取所有词汇，支持分页"""
+    # 获取当前索引
+    current_index = request.args.get('index', 0, type=int)
+
+    # 获取所有词汇（使用joinedload优化查询）
+    all_particles = LexicalParticle.query.options(
+        db.joinedload(LexicalParticle.parts_of_speech)
+            .joinedload(PartOfSpeech.definitions)
+            .joinedload(Definition.examples)
+    ).order_by(LexicalParticle.id).all()
+
+    # 检查索引是否有效
+    if current_index < 0:
+        current_index = 0
+    elif current_index >= len(all_particles):
+        current_index = len(all_particles) - 1
+
+    # 组织当前词汇数据
+    current_particle = all_particles[current_index]
+
+    parts = []
+    for pos in current_particle.parts_of_speech:
+        definitions = []
+        for definition in pos.definitions:
+            examples = [e.example for e in definition.examples]
+            definitions.append({
+                'text': definition.definition,
+                'examples': examples
+            })
+
+        parts.append({
+            'category': pos.category,
+            'sub_category': pos.sub_category,
+            'definitions': definitions
+        })
+
+    word_card = {
+        'character': current_particle.character,
+        'parts': sorted(parts, key=lambda x: x['category'])
+    }
+
+    return render_template('recite.html',
+                           word_card=word_card,
+                           current_index=current_index,
+                           total_words=len(all_particles))
 
 @app.route('/familiar')
 def familiar():
@@ -402,9 +450,9 @@ def familiar():
         os.remove(file_path)
     return render_template('next1.html')
 
-@app.route('/next')
-def next_page():
-    return render_template('next.html')
+#@app.route('/next')
+#def next_page():
+#    return render_template('next.html')
 
 @app.route('/generate', methods=['POST'])
 @limiter.limit("2 per second")
