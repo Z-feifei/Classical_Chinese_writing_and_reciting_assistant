@@ -98,6 +98,23 @@ class Example(db.Model):
     example = db.Column(db.Text, nullable=False)  # 文言例句
 
 
+# 用户背诵进度模型
+class RecitationProgress(db.Model):
+    __tablename__ = 'recitation_progress'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    last_studied = db.Column(db.DateTime, default=datetime.utcnow)
+    mastery_level = db.Column(db.Integer, default=0)  # 0-陌生, 1-熟悉, 2-掌握
+    wrong_count = db.Column(db.Integer, default=0)
+    right_count = db.Column(db.Integer, default=0)
+
+    # 关系
+    user = db.relationship('User', backref=db.backref('progress', lazy=True, cascade='all, delete-orphan'))
+    particle = db.relationship('LexicalParticle')
+
+
 def init_database():
     """初始化数据库"""
     with app.app_context():

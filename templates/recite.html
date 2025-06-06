@@ -1,69 +1,137 @@
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>文言文出题及背诵助手</title>
+    <title>智能背诵 - 文言文助手</title>
+    <!-- 引入Font Awesome图标库 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/recite.css') }}">
     <style>
-        .example {
-            margin-left: 20px;
-            color: #555;
-            font-style: italic;
+        /* 新增样式 */
+        .example-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
-        .sub-category {
-            font-style: italic;
-            color: #666;
-        }
-        .word-counter {
-            margin: 0 15px;
-            font-weight: bold;
-        }
-        .definition {
+        .example-text {
+            font-size: 16px;
             margin-bottom: 10px;
+        }
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .option-item {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .option-item:hover {
+            background-color: #f5f5f5;
+        }
+        .option-item.selected {
+            background-color: #e0f7fa;
+            border-color: #0097a7;
+        }
+        .mastery-level {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .mastery-0 { background-color: #ffcdd2; color: #b71c1c; } /* 陌生 */
+        .mastery-1 { background-color: #fff9c4; color: #f57f17; } /* 熟悉 */
+        .mastery-2 { background-color: #c8e6c9; color: #1b5e20; } /* 掌握 */
+        .stats {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* 添加首页图标样式 */
+        .home-icon-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .home-icon {
+            font-size: 24px;
+            color: #fff;
+            background-color: #6d4427;
+            padding: 10px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .home-icon:hover {
+            background-color: #8b5a2b;
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
-<div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
+<div class="header">智能背诵系统 - 文言文助手
+    <!-- 添加导航图标容器 -->
+    <div class="home-icon-container">
+        <a href="{{ url_for('home') }}" class="home-icon" title="返回首页">
+            <i class="fas fa-home"></i>
+        </a>
+    </div>
+</div>
 
 <div class="container">
     <div class="content">
         <div class="button-container">
             <button id="home-button">
-                <img class="icon1" src="/static/images/back_icon.png" alt="返回首页"/>
+
             </button>
             <span class="word-counter">{{ current_index + 1 }}/{{ total_words }}</span>
             <button id="next-button">
-                <img class="icon1" src="/static/images/next_icon.png" alt="下一个词"/>
+
             </button>
         </div>
 
         <div class="text-container">
             {% if word_card %}
             <h2>{{ word_card.character }}
-                <button id="mark-familiar" class="familiar-btn">
-                    <img class="icon2" src="/static/images/familiar_icon.png" alt="标记为熟悉"/>
-                </button>
-            </h2>
-            <div class="word-content">
-                {% for part in word_card.parts %}
-                <div class="part-of-speech">
-                    <strong>({{ loop.index }}) 用作{{ part.category }}</strong>
-                    {% if part.sub_category %}
-                    <span class="sub-category">{{ part.sub_category }}</span>
+                {% if progress %}
+                <span class="mastery-level mastery-{{ progress.mastery_level }}">
+                    {% if progress.mastery_level == 0 %}陌生
+                    {% elif progress.mastery_level == 1 %}熟悉
+                    {% else %}掌握
                     {% endif %}
-                    <br>
-                    {% for definition in part.definitions %}
-                    <div class="definition">
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ definition.text }}<br>
-                        {% for example in definition.examples %}
-                        <div class="example">{{ example }}</div>
-                        {% endfor %}
+                </span>
+                <span class="stats">✓ {{ progress.right_count }} ✗ {{ progress.wrong_count }}</span>
+                {% endif %}
+            </h2>
+
+            <form method="POST" action="{{ url_for('recite', index=current_index) }}">
+                <div class="examples-container">
+                    {% for example in word_card.examples %}
+                    <div class="example-item">
+                        <div class="example-text">
+                            <strong>例句:</strong> {{ example.text }}
+                        </div>
+                        <div class="options-container">
+                            {% for option in word_card.definitions_options %}
+                            <label class="option-item">
+                                <input type="radio" name="example_{{ example.id }}" value="{{ option.id }}" required>
+                                {{ option.text }}
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                     {% endfor %}
                 </div>
-                {% endfor %}
-            </div>
+
+                <div class="form-submit">
+                    <button type="submit" class="submit-btn">提交答案</button>
+                </div>
+            </form>
             {% else %}
             <p>没有找到词汇数据</p>
             {% endif %}
@@ -71,20 +139,31 @@
     </div>
 </div>
 
-
 <script>
     document.getElementById('home-button').addEventListener('click', () => {
-        //const newIndex = Math.max({{ current_index }} - 1, 0);
-        //window.location.href = `/recite?index=${newIndex}`;
         window.location.href = '/';
     });
-
 
     document.getElementById('next-button').addEventListener('click', () => {
         const newIndex = Math.min({{ current_index }} + 1, {{ total_words - 1 }});
         window.location.href = `/recite?index=${newIndex}`;
     });
 
+    // 添加选项选择效果
+    document.querySelectorAll('.option-item').forEach(item => {
+        item.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            radio.checked = true;
+
+            // 清除所有选中状态
+            document.querySelectorAll('.option-item').forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // 设置当前选中状态
+            this.classList.add('selected');
+        });
+    });
 </script>
 </body>
 </html>

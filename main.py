@@ -142,6 +142,23 @@ class Example(db.Model):
     definition_id = db.Column(db.Integer, db.ForeignKey('definitions.id'), nullable=False)
     example = db.Column(db.Text, nullable=False)  # 文言例句
 
+
+# 用户背诵进度模型
+class RecitationProgress(db.Model):
+    __tablename__ = 'recitation_progress'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    last_studied = db.Column(db.DateTime, default=datetime.utcnow)
+    mastery_level = db.Column(db.Integer, default=0)  # 0-陌生, 1-熟悉, 2-掌握
+    wrong_count = db.Column(db.Integer, default=0)
+    right_count = db.Column(db.Integer, default=0)
+
+    # 关系
+    user = db.relationship('User', backref=db.backref('progress', lazy=True, cascade='all, delete-orphan'))
+    particle = db.relationship('LexicalParticle')
+
 # 验证码存储（实际项目中建议使用Redis）
 verification_codes = {}
 
@@ -397,33 +414,152 @@ def exercise():
     return render_template('exercise.html')
 
 
-@app.route('/recite')
+@app.route('/recite', methods=['GET', 'POST'])
+@login_required
 def recite():
-    """单词背诵页面 - 从数据库获取所有词汇，支持分页"""
+    """单词背诵页面 - 智能背诵机制"""
     # 获取当前索引
     current_index = request.args.get('index', 0, type=int)
+
+    # 获取用户ID
+    user_id = session['user_id']
+
+    # 查询用户的学习进度
+    progress_records = RecitationProgress.query.filter_by(user_id=user_id).all()
 
     # 获取所有词汇（使用joinedload优化查询）
     all_particles = LexicalParticle.query.options(
         db.joinedload(LexicalParticle.parts_of_speech)
-            .joinedload(PartOfSpeech.definitions)
-            .joinedload(Definition.examples)
-    ).order_by(LexicalParticle.id).all()
+        .joinedload(PartOfSpeech.definitions)
+        .joinedload(Definition.examples)
+    ).all()
+
+    # 智能排序算法
+    def sort_key(particle):
+        # 查找该词汇的用户学习记录
+        progress = next((p for p in progress_records if p.particle_id == particle.id), None)
+
+        # 如果还没有学习记录，优先显示
+        if not progress:
+            return (0, 0, 0, particle.id)  # 优先级最高
+
+        # 计算权重：错误次数 + (当前时间 - 上次学习时间) * 系数
+        time_passed = (datetime.utcnow() - progress.last_studied).total_seconds() / 3600  # 小时
+        weight = progress.wrong_count + time_passed * 0.1
+
+        # 按照权重降序排序（权重高的先出现）
+        return (-weight, progress.wrong_count, -progress.right_count, particle.id)
+
+    # 根据智能算法排序
+    sorted_particles = sorted(all_particles, key=sort_key)
 
     # 检查索引是否有效
     if current_index < 0:
         current_index = 0
-    elif current_index >= len(all_particles):
-        current_index = len(all_particles) - 1
+    elif current_index >= len(sorted_particles):
+        current_index = len(sorted_particles) - 1
 
     # 组织当前词汇数据
-    current_particle = all_particles[current_index]
+    current_particle = sorted_particles[current_index]
 
+    # 获取当前词汇的学习进度
+    progress = RecitationProgress.query.filter_by(
+        user_id=user_id,
+        particle_id=current_particle.id
+    ).first()
+
+    # 处理POST请求（提交答案）
+    if request.method == 'POST':
+        # 获取用户提交的答案
+        answers = request.form
+
+        # 验证答案
+        correct = True
+        details = []
+
+        # 收集所有可能的释义
+        all_definitions = []
+        for pos in current_particle.parts_of_speech:
+            for definition in pos.definitions:
+                all_definitions.append({
+                    'id': definition.id,
+                    'text': definition.definition,
+                    'pos': pos.category
+                })
+
+        # 检查每个例句对应的答案
+        for pos in current_particle.parts_of_speech:
+            for definition in pos.definitions:
+                for example in definition.examples:
+                    answer_key = f'example_{example.id}'
+                    if answer_key in answers:
+                        selected_def = int(answers[answer_key])
+                        is_correct = selected_def == definition.id
+                        if not is_correct:
+                            correct = False
+
+                        # 记录详情
+                        details.append({
+                            'example': example.example,
+                            'selected': next((d['text'] for d in all_definitions if d['id'] == selected_def), '未选择'),
+                            'correct': definition.definition,
+                            'is_correct': is_correct
+                        })
+
+        # 确保progress对象存在（处理用户首次学习的情况）
+        if not progress:
+            progress = RecitationProgress(
+                user_id=user_id,
+                particle_id=current_particle.id,
+                last_studied=datetime.utcnow(),
+                mastery_level=0,
+                wrong_count=0,
+                right_count=0
+            )
+            db.session.add(progress)
+
+        # 更新统计信息（安全处理None值）
+        progress.last_studied = datetime.utcnow()
+        if correct:
+            progress.right_count = (progress.right_count or 0) + 1
+            progress.mastery_level = min(2, (progress.mastery_level or 0) + 1)
+            flash('全部回答正确！', 'success')
+        else:
+            progress.wrong_count = (progress.wrong_count or 0) + 1
+            progress.mastery_level = max(0, (progress.mastery_level or 0) - 1)
+            flash('部分回答错误，请继续努力！', 'error')
+
+        db.session.commit()
+
+        # 如果全部正确，移动到下一个词汇
+        if correct:
+            current_index = min(current_index + 1, len(sorted_particles) - 1)
+            return redirect(url_for('recite', index=current_index))
+        else:
+            # 显示答题详情
+            return render_template('recite_result.html',
+                                   details=details,
+                                   current_index=current_index,
+                                   total_words=len(sorted_particles),
+                                   particle=current_particle)
+
+    # 组织当前词汇数据（GET请求）
     parts = []
+    examples_list = []
+
     for pos in current_particle.parts_of_speech:
         definitions = []
         for definition in pos.definitions:
-            examples = [e.example for e in definition.examples]
+            examples = []
+            for example in definition.examples:
+                examples.append({
+                    'id': example.id,
+                    'text': example.example
+                })
+                examples_list.append({
+                    'id': example.id,
+                    'text': example.example
+                })
             definitions.append({
                 'text': definition.definition,
                 'examples': examples
@@ -435,15 +571,31 @@ def recite():
             'definitions': definitions
         })
 
+    # 收集所有可能的释义选项
+    definitions_options = []
+    for pos in current_particle.parts_of_speech:
+        for definition in pos.definitions:
+            definitions_options.append({
+                'id': definition.id,
+                'text': f"{definition.definition} ({pos.category})"
+            })
+
+    # 随机打乱选项
+    random.shuffle(definitions_options)
+
     word_card = {
         'character': current_particle.character,
-        'parts': sorted(parts, key=lambda x: x['category'])
+        'parts': sorted(parts, key=lambda x: x['category']),
+        'examples': examples_list,
+        'definitions_options': definitions_options
     }
 
     return render_template('recite.html',
                            word_card=word_card,
                            current_index=current_index,
-                           total_words=len(all_particles))
+                           total_words=len(sorted_particles),
+                           progress=progress)
+
 
 @app.route('/familiar')
 def familiar():
