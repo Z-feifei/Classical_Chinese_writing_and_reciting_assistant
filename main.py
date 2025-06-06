@@ -159,6 +159,21 @@ class RecitationProgress(db.Model):
     user = db.relationship('User', backref=db.backref('progress', lazy=True, cascade='all, delete-orphan'))
     particle = db.relationship('LexicalParticle')
 
+# 用户背词记录模型
+class VocabularyRecord(db.Model):
+    __tablename__ = 'vocabulary_records'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    study_time = db.Column(db.DateTime, default=datetime.utcnow)
+    wrong_example_ids = db.Column(db.JSON)  # 存储答错的例句ID
+    correct_answer_ids = db.Column(db.JSON)  # 存储正确答案的释义ID
+    user_answers = db.Column(db.JSON)  # 存储用户选择的答案
+
+    # 关系
+    particle = db.relationship('LexicalParticle')
+
 # 验证码存储（实际项目中建议使用Redis）
 verification_codes = {}
 
@@ -487,6 +502,11 @@ def recite():
                     'pos': pos.category
                 })
 
+        # 准备记录错误题目信息
+        wrong_example_ids = []
+        correct_answer_ids = []
+        user_answers = []
+
         # 检查每个例句对应的答案
         for pos in current_particle.parts_of_speech:
             for definition in pos.definitions:
@@ -495,8 +515,20 @@ def recite():
                     if answer_key in answers:
                         selected_def = int(answers[answer_key])
                         is_correct = selected_def == definition.id
+
+                        # 记录用户答案
+                        user_answers.append({
+                            'example_id': example.id,
+                            'selected_answer': selected_def,
+                            'correct_answer': definition.id,
+                            'is_correct': is_correct
+                        })
+
+                        # 记录错误题目
                         if not is_correct:
                             correct = False
+                            wrong_example_ids.append(example.id)
+                            correct_answer_ids.append(definition.id)
 
                         # 记录详情
                         details.append({
@@ -529,6 +561,18 @@ def recite():
             progress.mastery_level = max(0, (progress.mastery_level or 0) - 1)
             flash('部分回答错误，请继续努力！', 'error')
 
+        # 创建学习记录
+        record = VocabularyRecord(
+            user_id=user_id,
+            particle_id=current_particle.id,
+            study_time=datetime.utcnow(),
+            wrong_example_ids=wrong_example_ids,
+            correct_answer_ids=correct_answer_ids,
+            user_answers=user_answers
+        )
+        db.session.add(record)
+
+        # 提交所有数据库更改
         db.session.commit()
 
         # 如果全部正确，移动到下一个词汇
@@ -597,6 +641,65 @@ def recite():
                            progress=progress)
 
 
+@app.route('/api/vocabulary_records', methods=['GET'])
+@login_required
+def get_vocabulary_records():
+    search_term = request.args.get('q', '').strip()
+    user_id = session['user_id']
+
+    # 基础查询
+    base_query = VocabularyRecord.query.filter_by(user_id=user_id)
+
+    # 添加搜索过滤
+    if search_term:
+        base_query = base_query.join(LexicalParticle).filter(
+            LexicalParticle.character.like(f'%{search_term}%')
+        )
+
+    # 按时间排序
+    records = base_query.order_by(VocabularyRecord.study_time.desc()).all()
+
+    # 获取所有相关词汇的ID
+    particle_ids = [record.particle_id for record in records]
+
+    # 一次性查询所有相关词汇的学习进度
+    progress_records = RecitationProgress.query.filter(
+        RecitationProgress.user_id == user_id,
+        RecitationProgress.particle_id.in_(particle_ids)
+    ).all()
+
+    # 创建进度映射字典：particle_id -> progress
+    progress_map = {progress.particle_id: progress for progress in progress_records}
+
+    # 处理记录
+    records_data = []
+    for record in records:
+        particle = LexicalParticle.query.get(record.particle_id)
+
+        # 获取该词汇的学习进度
+        progress = progress_map.get(record.particle_id)
+
+        # 获取错误题目详情
+        wrong_items = []
+        if record.wrong_example_ids and record.correct_answer_ids:
+            for idx, example_id in enumerate(record.wrong_example_ids):
+                example = Example.query.get(example_id)
+                correct_answer = Definition.query.get(record.correct_answer_ids[idx])
+                wrong_items.append({
+                    'example': example.example,
+                    'correct_answer': correct_answer.definition
+                })
+
+        records_data.append({
+            'id': record.id,
+            'study_time': record.study_time.strftime('%Y-%m-%d %H:%M'),
+            'character': particle.character,
+            'mastery_level': progress.mastery_level if progress else 0,
+            'wrong_count': len(record.wrong_example_ids),
+            'wrong_items': wrong_items
+        })
+
+    return jsonify(records_data)
 @app.route('/familiar')
 def familiar():
     file_path = os.path.join(app.static_folder, 'images', 'carousel2.png')

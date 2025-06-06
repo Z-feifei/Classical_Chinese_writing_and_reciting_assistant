@@ -115,6 +115,21 @@ class RecitationProgress(db.Model):
     particle = db.relationship('LexicalParticle')
 
 
+# 用户背词记录模型
+class VocabularyRecord(db.Model):
+    __tablename__ = 'vocabulary_records'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    study_time = db.Column(db.DateTime, default=datetime.utcnow)
+    wrong_example_ids = db.Column(db.JSON)  # 存储答错的例句ID
+    correct_answer_ids = db.Column(db.JSON)  # 存储正确答案的释义ID
+    user_answers = db.Column(db.JSON)  # 存储用户选择的答案
+
+    # 关系
+    particle = db.relationship('LexicalParticle')
+
 def init_database():
     """初始化数据库"""
     with app.app_context():
