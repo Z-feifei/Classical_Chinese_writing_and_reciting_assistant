@@ -7,7 +7,7 @@ from erniebot_agent.memory import HumanMessage, AIMessage, WholeMemory
 import nest_asyncio
 nest_asyncio.apply()
 
-os.environ["EB_AGENT_ACCESS_TOKEN"] = "bc95814b38c92d4c1fc9c124cdb0d8c4ea0aacbd"
+os.environ["EB_AGENT_ACCESS_TOKEN"] = "63534adaae1c3821e5b2448d91fb3555c5a33b37"
 
 content=""
 DiffofQ1=3
