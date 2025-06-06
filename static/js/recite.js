@@ -1,15 +1,5 @@
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    // 首页按钮
-    document.getElementById('home-button').addEventListener('click', () => {
-        window.location.href = '/';
-    });
-
-    // 下一个按钮
-    document.getElementById('next-button').addEventListener('click', () => {
-        const newIndex = Math.min(currentIndex + 1, totalWords - 1);
-        window.location.href = `/recite?index=${newIndex}`;
-    });
 
     // 标记为已掌握按钮
     document.getElementById('mark-mastered-btn').addEventListener('click', function() {

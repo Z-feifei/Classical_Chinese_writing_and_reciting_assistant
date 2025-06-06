@@ -17,6 +17,7 @@ from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, or_
 from sqlalchemy import func  # 添加导入func
+from werkzeug.security import generate_password_hash, check_password_hash
 
 import UseModel
 import split
@@ -70,6 +71,12 @@ class User(db.Model):
     # 关系
     # study_records = db.relationship('StudyRecord', backref='user', lazy=True, cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 
 # 用户背诵进度模型

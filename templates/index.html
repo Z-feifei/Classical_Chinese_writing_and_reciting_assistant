@@ -4,13 +4,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>文言文出题及背诵助手</title>
     <script src="{{ url_for('static', filename='js/stars.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/carousel.js') }}"></script>
     <script src="{{ url_for('static', filename='js/generate.js') }}"></script>
     <script src="{{ url_for('static', filename='js/lexicon.js') }}"></script>
     <script src="{{ url_for('static', filename='js/personal.js') }}"></script>
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/stars.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/carousel.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
     <style>
@@ -208,6 +206,9 @@
                 <i class="fas fa-book-open"></i>
             </a>
             {% if session.user_id %}
+                <a href="{{ url_for('recite') }}" class="icon-link" title="背诵词汇">
+                    <i class="fas fa-language"></i>
+                </a>
                 <a href="{{ url_for('profile') }}" class="icon-link" title="个人中心">
                     <i class="fas fa-user-circle"></i>
                 </a>
@@ -221,11 +222,12 @@
         <div class="header">
             <div class="header-title">让经史子集走进课堂——文言文出题及背诵助手</div>
             <div class="header-nav">
-                <a href="{{ url_for('home') }}">首页</a>
+
                 {% if session.user_id %}
                     <span>欢迎，{{ session.username }}</span>
-                    <a href="{{ url_for('profile') }}">个人中心</a>
                     <a href="{{ url_for('logout') }}">退出</a>
+
+
                 {% else %}
                     <a href="{{ url_for('login') }}">登录</a>
                     <a href="{{ url_for('register') }}">注册</a>
@@ -241,14 +243,6 @@
                 </div>
             {% endif %}
 
-            <div id="carousel">
-                <img src="/static/images/carousel1.png" alt="Placeholder 1" id="carousel1">
-                <img src="/static/images/carousel2.png" alt="Placeholder 2" id="carousel2">
-                <img src="/static/images/carousel3.png" alt="Placeholder 3" id="carousel3">
-                <img src="/static/images/carousel4.png" alt="Placeholder 4" id="carousel4">
-                <img src="/static/images/carousel5.png" alt="Placeholder 5" id="carousel5">
-                <img src="/static/images/carousel6.png" alt="Placeholder 6" id="carousel6">
-            </div>
 
             <textarea id="article" placeholder="在此处输入文章内容" {% if not session.user_id %}disabled{% endif %}></textarea>
 
