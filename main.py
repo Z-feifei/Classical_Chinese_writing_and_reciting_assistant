@@ -3,6 +3,7 @@ import os
 import random
 import smtplib
 import string
+from sqlalchemy import and_, or_
 from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -229,11 +230,15 @@ def add_favorite():
         data = request.get_json()
         title = data.get('title')
         content = data.get('content')
+        question = data.get('question')  # 获取问题
+        answer = data.get('answer')      # 获取答案
 
         favorite = Favorite(
             user_id=session['user_id'],
             title=title,
-            content=content
+            content=content,
+            question=question,
+            answer=answer
         )
 
         db.session.add(favorite)
@@ -659,6 +664,40 @@ def lexicon_data():
 def lexicon_page():
     """词库页面路由"""
     return render_template('lexicon.html')
+
+# 查看收藏详情
+@app.route('/favorite_detail/<int:favorite_id>')
+@login_required
+def favorite_detail(favorite_id):
+    favorite = Favorite.query.filter_by(id=favorite_id, user_id=session['user_id']).first_or_404()
+    return render_template('favorite_detail.html', favorite=favorite)
+
+# 搜索收藏
+@app.route('/search_favorites', methods=['GET'])
+@login_required
+def search_favorites():
+    query = request.args.get('query', '')
+    if query:
+        favorites = Favorite.query.filter(
+            and_(
+                Favorite.user_id == session['user_id'],
+                Favorite.title.like(f'%{query}%')
+            )
+        ).all()
+    else:
+        favorites = Favorite.query.filter_by(user_id=session['user_id']).all()
+    
+    return jsonify({
+        'success': True,
+        'favorites': [{
+            'id': f.id,
+            'title': f.title,
+            'content': f.content[:100] + ('...' if len(f.content) > 100 else ''),
+            'question': f.question,
+            'created_at': f.created_at.strftime('%Y-%m-%d %H:%M')
+        } for f in favorites]
+    })
+
 @app.route('/personal')
 def personal():
     return render_template('profile.html')

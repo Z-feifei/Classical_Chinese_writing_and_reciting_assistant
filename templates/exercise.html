@@ -88,17 +88,42 @@
             flex: 1;
         }
 
+        .icon.favorite {
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        
+        .icon.favorite i.fas {
+            color: #e74c3c;
+        }
+        
+        .icon.favorite i.far {
+            color: #777;
+        }
+        
+        /* 收藏成功提示 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(40, 167, 69, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            z-index: 1000;
+            display: none;
+        }
 
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 <div class="header">让经史子集走进课堂——文言文出题及背诵助手</div>
+<div class="toast" id="toast">收藏成功！</div>
 <div class="container">
     <div class="card">
         <div class="title">
-            <!-- 修改参数为 article 和 translation -->
-            <div onclick="toggleText1('article')" id="text1-article">原文</div>
+            <div onclick="toggleText1('article')" id="text1-original">原文</div>
             <div onclick="toggleText1('translation')" id="text1-translation">译文</div>
             <div class="indicator" id="indicator1"></div>
         </div>
@@ -113,6 +138,7 @@
             <div class="actions">
                 <span>题目一：</span>
                 <span class="icon" onclick="refreshQuestion('question1-content')"><i class="fas fa-sync-alt"></i></span>
+                <span class="icon favorite" onclick="toggleFavorite(1)"><i class="far fa-heart"></i></span>
             </div>
             <div class="content" id="question1-content">
                 <!-- 题目一内容将会在这里显示 -->
@@ -130,6 +156,7 @@
             <div class="actions">
                 <span>题目二：</span>
                 <span class="icon" onclick="refreshQuestion('question2-content')"><i class="fas fa-sync-alt"></i></span>
+                <span class="icon favorite" onclick="toggleFavorite(2)"><i class="far fa-heart"></i></span>
             </div>
 
             <div class="content" id="question2-content">
@@ -148,6 +175,7 @@
             <div class="actions">
                 <span>题目三：</span>
                 <span class="icon" onclick="refreshQuestion('question3-content')"><i class="fas fa-sync-alt"></i></span>
+                <span class="icon favorite" onclick="toggleFavorite(3)"><i class="far fa-heart"></i></span>
             </div>
 
             <div class="content" id="question3-content">
@@ -166,6 +194,7 @@
             <div class="actions">
                 <span>题目四：</span>
                 <span class="icon" onclick="refreshQuestion('question4-content')"><i class="fas fa-sync-alt"></i></span>
+                <span class="icon favorite" onclick="toggleFavorite(4)"><i class="far fa-heart"></i></span>
             </div>
 
             <div class="content" id="question4-content">
@@ -185,6 +214,7 @@
             <div class="actions">
                 <span>题目五：</span>
                 <span class="icon" onclick="refreshQuestion('question5-content')"><i class="fas fa-sync-alt"></i></span>
+                <span class="icon favorite" onclick="toggleFavorite(5)"><i class="far fa-heart"></i></span>
             </div>
 
             <div class="content" id="question5-content">
@@ -207,5 +237,68 @@
     <button onclick="reloadQuestions()">重新生成所有题目</button>
 </div>
 
+<script>
+    function redirect() {
+        window.location.href = `/`;
+    }
+
+    // 收藏功能
+    function toggleFavorite(questionNum) {
+        const questionId = `question${questionNum}-content`;
+        const answerId = `answer${questionNum}-content`;
+        const question = document.getElementById(questionId).innerText;
+        const answer = document.getElementById(answerId).innerText;
+        const title = document.getElementById('text1-content').innerText.substring(0, 50) + '...';
+        const content = document.getElementById('text1-content').innerText;
+        const icon = document.querySelector(`.actions span.favorite[onclick="toggleFavorite(${questionNum})"] i`);
+        
+        // 检查是否已收藏
+        if (icon.classList.contains('fas')) {
+            // 取消收藏
+            icon.classList.remove('fas');
+            icon.classList.add('far');
+            showToast('取消收藏成功！');
+        } else {
+            // 添加收藏
+            fetch('/add_favorite', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: title,
+                    content: content,
+                    question: question,
+                    answer: answer
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    showToast('收藏成功！');
+                } else {
+                    showToast('收藏失败：' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('收藏过程中发生错误:', error);
+                showToast('收藏失败，请重试');
+            });
+        }
+    }
+    
+    // 显示提示信息
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        toast.innerText = message;
+        toast.style.display = 'block';
+        
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+</script>
 </body>
 </html>

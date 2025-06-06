@@ -51,6 +51,8 @@ class Favorite(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     content = db.Column(db.Text, nullable=False)
     title = db.Column(db.String(255), nullable=False)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -169,7 +171,9 @@ def create_sample_data():
             sample_favorite = Favorite(
                 user_id=test_user.id,
                 title='论语·学而',
-                content='子曰："学而时习之，不亦说乎？有朋自远方来，不亦乐乎？人不知而不愠，不亦君子乎？"'
+                content='子曰："学而时习之，不亦说乎？有朋自远方来，不亦乐乎？人不知而不愠，不亦君子乎？"',
+                question='孔子认为"君子"应具备怎样的品格？请结合原文具体分析',
+                answer='孔子将"不愠"作为君子的基本标准，强调道德自律和精神独立性，区别于功利性的人际交往'
             )
             db.session.add(sample_favorite)
 

@@ -1,0 +1,144 @@
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收藏详情 - 文言文出题及背诵助手</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-image: url('/static/images/img.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 100vh;
+        }
+        .header {
+            background-color: #6d4427;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 20px;
+        }
+        .header-links {
+            display: flex;
+            gap: 20px;
+        }
+        .header-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .detail-header {
+            border-bottom: 1px solid #eee;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .detail-header h2 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .detail-header p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .detail-content {
+            margin-bottom: 20px;
+        }
+        .detail-content h3 {
+            color: #6d4427;
+            margin: 15px 0 10px 0;
+        }
+        .detail-content p {
+            line-height: 1.6;
+            color: #333;
+        }
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            background-color: #6d4427;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+        }
+        .btn.delete {
+            background-color: #dc3545;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="header">
+        <h1>文言文出题及背诵助手</h1>
+        <div class="header-links">
+            <a href="{{ url_for('home') }}">首页</a>
+            <a href="{{ url_for('profile') }}">个人中心</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="detail-header">
+            <h2>{{ favorite.title }}</h2>
+            <p><small>收藏时间：{{ favorite.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+        </div>
+        
+        <div class="detail-content">
+            <h3>原文</h3>
+            <p>{{ favorite.content }}</p>
+            
+            <h3>题目</h3>
+            <p>{{ favorite.question }}</p>
+            
+            <h3>答案</h3>
+            <p>{{ favorite.answer }}</p>
+        </div>
+        
+        <div class="actions">
+            <a href="{{ url_for('profile') }}" class="btn"><i class="fas fa-arrow-left"></i> 返回收藏列表</a>
+            <button class="btn delete" onclick="deleteFavorite('{{ favorite.id }}')"><i class="fas fa-trash"></i> 取消收藏</button>
+        </div>
+    </div>
+    
+    <script>
+        function deleteFavorite(id) {
+            if (confirm('确定要取消收藏吗？')) {
+                fetch(`/delete_favorite/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = '{{ url_for("profile") }}';
+                    } else {
+                        alert(data.error || '操作失败');
+                    }
+                })
+                .catch(error => console.error('删除失败:', error));
+            }
+        }
+    </script>
+</body>
+</html>

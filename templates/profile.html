@@ -304,6 +304,29 @@
             background-color: #dc3545;
             color: white;
         }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .search-box button {
+            padding: 5px 10px;
+            border: none;
+            background-color: #6d4427;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .search-box .show-all-btn {
+            margin-left: 10px;
+            background-color: #28a745;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -359,24 +382,33 @@
                     <span>共 {{ user.favorites|length }} 项</span>
                 </div>
 
-                {% if user.favorites %}
-                    {% for favorite in user.favorites %}
-                        <div class="favorite-item">
-                            <h4>{{ favorite.title }}</h4>
-                            <p>{{ favorite.content[:200] }}{% if favorite.content|length > 200 %}...{% endif %}</p>
-                            <p><small>收藏时间：{{ favorite.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
-                            <div class="actions">
-                                <button class="btn-small view" onclick="viewFavorite('{{ favorite.id }}')">查看全文</button>
-                                <button class="btn-small delete" onclick="deleteFavorite('{{ favorite.id }}')">删除</button>
+                <!-- 搜索框 -->
+                <div class="search-box">
+                    <input type="text" id="favorite-search" placeholder="搜索文章标题...">
+                    <button onclick="searchFavorites()"><i class="fas fa-search"></i></button>
+                    <button onclick="showAllFavorites()" class="show-all-btn"><i class="fas fa-list"></i> 显示所有</button>
+                </div>
+                
+                <div id="favorites-list">
+                    {% if user.favorites %}
+                        {% for favorite in user.favorites %}
+                            <div class="favorite-item">
+                                <h4>{{ favorite.title }}</h4>
+                                <p>{{ favorite.content[:200] }}{% if favorite.content|length > 200 %}...{% endif %}</p>
+                                <p><small>收藏时间：{{ favorite.created_at.strftime('%Y-%m-%d %H:%M') }}</small></p>
+                                <div class="actions">
+                                    <button class="btn-small view" onclick="viewFavorite('{{ favorite.id }}')">查看详情</button>
+                                    <button class="btn-small delete" onclick="deleteFavorite('{{ favorite.id }}')">删除</button>
+                                </div>
                             </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="empty-state">
+                            <i class="fas fa-heart"></i>
+                            <p>暂无收藏内容</p>
                         </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="empty-state">
-                        <i class="fas fa-heart"></i>
-                        <p>暂无收藏内容</p>
-                    </div>
-                {% endif %}
+                    {% endif %}
+                </div>
             </div>
 
             <!-- 学习记录 -->
@@ -542,7 +574,7 @@
         // 查看收藏详情
         function viewFavorite(id) {
             // 这里可以打开详情页面或模态框
-            alert('查看收藏详情功能待实现');
+            window.location.href = `/favorite_detail/${id}`;
         }
 
         // 删除收藏
@@ -557,6 +589,62 @@
                         location.reload();
                     }
                 });
+            }
+        }
+        
+        // 搜索收藏
+        function searchFavorites() {
+            const query = document.getElementById('favorite-search').value;
+            
+            fetch(`/search_favorites?query=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateFavoritesList(data.favorites);
+                }
+            });
+        }
+        
+        // 显示所有收藏
+        function showAllFavorites() {
+            document.getElementById('favorite-search').value = '';
+            
+            // 使用API获取所有收藏
+            fetch('/search_favorites')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateFavoritesList(data.favorites);
+                }
+            });
+        }
+        
+        // 更新收藏列表
+        function updateFavoritesList(favorites) {
+            const favoritesList = document.getElementById('favorites-list');
+            favoritesList.innerHTML = '';
+            
+            if (favorites.length > 0) {
+                favorites.forEach(favorite => {
+                    favoritesList.innerHTML += `
+                        <div class="favorite-item">
+                            <h4>${favorite.title}</h4>
+                            <p>${favorite.content}</p>
+                            <p><small>收藏时间：${favorite.created_at}</small></p>
+                            <div class="actions">
+                                <button class="btn-small view" onclick="viewFavorite('${favorite.id}')">查看详情</button>
+                                <button class="btn-small delete" onclick="deleteFavorite('${favorite.id}')">删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                favoritesList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>未找到相关收藏</p>
+                    </div>
+                `;
             }
         }
 
