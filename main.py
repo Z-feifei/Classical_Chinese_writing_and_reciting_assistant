@@ -3,8 +3,8 @@ import os
 import random
 import smtplib
 import string
-from sqlalchemy import and_, or_
 from datetime import datetime
+from datetime import timedelta  # 修改此处，导入timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from functools import wraps
@@ -16,7 +16,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import and_, or_
-from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func  # 添加导入func
 
 import UseModel
 import split
@@ -54,7 +54,7 @@ limiter = Limiter(
 semaphore = asyncio.Semaphore(2, loop=global_loop)
 
 
-# 数据库模型
+# 用户系统数据模型
 class User(db.Model):
     __tablename__ = 'users'
 
@@ -67,80 +67,8 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # 关系
-    study_records = db.relationship('StudyRecord', backref='user', lazy=True, cascade='all, delete-orphan')
+    # study_records = db.relationship('StudyRecord', backref='user', lazy=True, cascade='all, delete-orphan')
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
-
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
-
-
-class StudyRecord(db.Model):
-    __tablename__ = 'study_records'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    article_content = db.Column(db.Text, nullable=False)
-    score = db.Column(db.Integer)
-    study_time = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class Favorite(db.Model):
-    __tablename__ = 'favorites'
-
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
-    title = db.Column(db.String(255), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-# 实虚词表模型
-class LexicalParticle(db.Model):
-    __tablename__ = 'lexical_particles'
-
-    id = db.Column(db.Integer, primary_key=True)
-    character = db.Column(db.String(50), nullable=False, unique=True)  # 汉字
-
-    # 建立一对多关系
-    parts_of_speech = db.relationship('PartOfSpeech', backref='particle', cascade='all, delete-orphan')
-
-
-# 词性分类表模型
-class PartOfSpeech(db.Model):
-    __tablename__ = 'parts_of_speech'
-
-    id = db.Column(db.Integer, primary_key=True)
-    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
-    category = db.Column(db.String(20), nullable=False)  # 词性分类
-    sub_category = db.Column(db.String(5))  # 子分类标记
-
-    # 建立一对多关系
-    definitions = db.relationship('Definition', backref='pos', cascade='all, delete-orphan')
-
-
-# 释义表模型
-class Definition(db.Model):
-    __tablename__ = 'definitions'
-
-    id = db.Column(db.Integer, primary_key=True)
-    pos_id = db.Column(db.Integer, db.ForeignKey('parts_of_speech.id'), nullable=False)
-    definition = db.Column(db.Text, nullable=False)  # 详细释义
-
-
-    # 建立一对多关系
-    examples = db.relationship('Example', backref='definition', cascade='all, delete-orphan')
-
-
-# 例句表模型
-class Example(db.Model):
-    __tablename__ = 'examples'
-
-    id = db.Column(db.Integer, primary_key=True)
-    definition_id = db.Column(db.Integer, db.ForeignKey('definitions.id'), nullable=False)
-    example = db.Column(db.Text, nullable=False)  # 文言例句
 
 
 # 用户背诵进度模型
@@ -159,6 +87,7 @@ class RecitationProgress(db.Model):
     user = db.relationship('User', backref=db.backref('progress', lazy=True, cascade='all, delete-orphan'))
     particle = db.relationship('LexicalParticle')
 
+
 # 用户背词记录模型
 class VocabularyRecord(db.Model):
     __tablename__ = 'vocabulary_records'
@@ -173,6 +102,60 @@ class VocabularyRecord(db.Model):
 
     # 关系
     particle = db.relationship('LexicalParticle')
+
+
+# 用户收藏题目模型
+class Favorite(db.Model):
+    __tablename__ = 'favorites'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    content = db.Column(db.Text, nullable=False)  # 文章内容
+    question = db.Column(db.Text)  # 题目
+    answer = db.Column(db.Text)    # 答案
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# 实词库数据模型
+class LexicalParticle(db.Model):
+    __tablename__ = 'lexical_particles'
+
+    id = db.Column(db.Integer, primary_key=True)
+    character = db.Column(db.String(50), nullable=False, unique=True)  # 汉字
+
+    # 建立一对多关系
+    parts_of_speech = db.relationship('PartOfSpeech', backref='particle', cascade='all, delete-orphan')
+
+
+class PartOfSpeech(db.Model):
+    __tablename__ = 'parts_of_speech'
+
+    id = db.Column(db.Integer, primary_key=True)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    category = db.Column(db.String(20), nullable=False)  # 词性分类
+    sub_category = db.Column(db.String(5))  # 子分类标记
+
+    # 建立一对多关系
+    definitions = db.relationship('Definition', backref='pos', cascade='all, delete-orphan')
+
+
+class Definition(db.Model):
+    __tablename__ = 'definitions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    pos_id = db.Column(db.Integer, db.ForeignKey('parts_of_speech.id'), nullable=False)
+    definition = db.Column(db.Text, nullable=False)  # 详细释义
+
+    # 建立一对多关系
+    examples = db.relationship('Example', backref='definition', cascade='all, delete-orphan')
+
+class Example(db.Model):
+    __tablename__ = 'examples'
+
+    id = db.Column(db.Integer, primary_key=True)
+    definition_id = db.Column(db.Integer, db.ForeignKey('definitions.id'), nullable=False)
+    example = db.Column(db.Text, nullable=False)  # 文言例句
+
 
 # 验证码存储（实际项目中建议使用Redis）
 verification_codes = {}
@@ -237,23 +220,6 @@ def update_profile():
         return jsonify({'success': False, 'error': str(e)})
 
 
-# 删除收藏
-@app.route('/delete_favorite/<int:favorite_id>', methods=['DELETE'])
-@login_required
-def delete_favorite(favorite_id):
-    try:
-        favorite = Favorite.query.filter_by(id=favorite_id, user_id=session['user_id']).first()
-        if favorite:
-            db.session.delete(favorite)
-            db.session.commit()
-            return jsonify({'success': True})
-        else:
-            return jsonify({'success': False, 'error': '收藏不存在'})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'success': False, 'error': str(e)})
-
-
 # 添加收藏
 @app.route('/add_favorite', methods=['POST'])
 @login_required
@@ -280,6 +246,103 @@ def add_favorite():
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
 
+
+# 删除收藏
+@app.route('/delete_favorite/<int:favorite_id>', methods=['DELETE'])
+@login_required
+def delete_favorite(favorite_id):
+    try:
+        favorite = Favorite.query.filter_by(id=favorite_id, user_id=session['user_id']).first()
+        if favorite:
+            db.session.delete(favorite)
+            db.session.commit()
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': '收藏不存在'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+
+
+# 学习进度
+@app.route('/api/study_progress', methods=['GET'])
+@login_required
+def get_study_progress():
+    user_id = session['user_id']
+
+    # 查询用户的学习进度
+    progress_records = RecitationProgress.query.filter_by(user_id=user_id).all()
+
+    # 统计各掌握级别的词汇数量
+    stats = {
+        'mastered': 0,  # mastery_level=2
+        'familiar': 0,  # mastery_level=1
+        'unfamiliar': 0,  # mastery_level=0
+        'total': LexicalParticle.query.count()  # 总词汇量
+    }
+
+    # 收集词汇列表
+    mastered_words = []
+    unfamiliar_words = []
+
+    # 按掌握级别分组
+    for record in progress_records:
+        if record.mastery_level == 2:
+            stats['mastered'] += 1
+            mastered_words.append(record.particle.character)
+        elif record.mastery_level == 1:
+            stats['familiar'] += 1
+        else:
+            stats['unfamiliar'] += 1
+            unfamiliar_words.append(record.particle.character)
+
+    # 添加未学习过的词汇到陌生词汇列表
+    all_words = [p.character for p in LexicalParticle.query.all()]
+    never_studied = set(all_words) - set(mastered_words) - set(unfamiliar_words)
+    stats['unfamiliar'] += len(never_studied)
+    unfamiliar_words.extend(never_studied)
+
+    # 生成燃尽图数据（过去30天的学习记录）
+    burndown_data = []
+    today = datetime.utcnow().date()
+    mastered_by_date = {}
+
+    # 查询过去30天内掌握的词
+    for i in range(30):
+        date = today - timedelta(days=i)
+        mastered_by_date[date.strftime('%Y-%m-%d')] = 0
+
+    # 查询每天掌握的词
+    mastered_records = db.session.query(
+        func.date(RecitationProgress.last_studied).label('study_date'),
+        func.count().label('count')
+    ).filter(
+        RecitationProgress.user_id == user_id,
+        RecitationProgress.mastery_level == 2,
+        func.date(RecitationProgress.last_studied) >= today - timedelta(days=30)
+    ).group_by('study_date').all()
+
+    # 填充燃尽图数据
+    cumulative = 0
+    for i in range(30):
+        date = today - timedelta(days=30 - i)
+        date_str = date.strftime('%Y-%m-%d')
+
+        # 查找当天掌握的词
+        daily_count = next((record[1] for record in mastered_records if record[0] == date), 0)
+        cumulative += daily_count
+
+        burndown_data.append({
+            'date': date_str,
+            'mastered': cumulative
+        })
+
+    return jsonify({
+        'stats': stats,
+        'mastered_words': mastered_words,
+        'unfamiliar_words': list(unfamiliar_words),
+        'burndown_data': burndown_data
+    })
 
 async def limited_execute(task_func):
     """带事件循环检查的异步执行器"""
@@ -405,16 +468,9 @@ def send_verification():
 @login_required
 def profile():
     user = User.query.get(session['user_id'])
-    records = StudyRecord.query.filter_by(user_id=user.id).order_by(StudyRecord.study_time.desc()).limit(5).all()
+    records = VocabularyRecord.query.filter_by(user_id=user.id).order_by(VocabularyRecord.study_time.desc()).limit(5).all()
     return render_template('profile.html', user=user, records=records)
 
-
-@app.route('/history')
-@login_required
-def history():
-    user = User.query.get(session['user_id'])
-    records = StudyRecord.query.filter_by(user_id=user.id).order_by(StudyRecord.study_time.desc()).all()
-    return render_template('history.html', user=user, records=records)
 
 
 @app.route('/logout')
@@ -700,12 +756,6 @@ def get_vocabulary_records():
         })
 
     return jsonify(records_data)
-@app.route('/familiar')
-def familiar():
-    file_path = os.path.join(app.static_folder, 'images', 'carousel2.png')
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    return render_template('next1.html')
 
 
 @app.route('/generate', methods=['POST'])
