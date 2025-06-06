@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>答题结果 - 文言文助手</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/recite.css') }}">
+    <style>
+        .result-container {
+            margin-top: 20px;
+        }
+        .result-item {
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 5px solid;
+        }
+        .correct {
+            border-color: #4CAF50;
+            background-color: #e8f5e9;
+        }
+        .incorrect {
+            border-color: #f44336;
+            background-color: #ffebee;
+        }
+        .example-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .selected-answer {
+            font-weight: bold;
+            color: #f44336;
+        }
+        .correct-answer {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .continue-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #6d4427;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+<div class="header">答题结果 - 文言文助手</div>
+
+<div class="container">
+    <div class="content">
+        <div class="text-container">
+            <h2>{{ particle.character }} - 答题结果</h2>
+
+            <div class="result-container">
+                {% for item in details %}
+                <div class="result-item {% if item.is_correct %}correct{% else %}incorrect{% endif %}">
+                    <div class="example-text">
+                        <strong>例句:</strong> {{ item.example }}
+                    </div>
+                    <div>
+                        <span>你的选择: </span>
+                        <span class="selected-answer">{{ item.selected }}</span>
+                    </div>
+                    {% if not item.is_correct %}
+                    <div>
+                        <span>正确答案: </span>
+                        <span class="correct-answer">{{ item.correct }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="button-container">
+                <button class="continue-btn" onclick="window.location.href='/recite?index={{ current_index }}'">
+                    继续学习
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

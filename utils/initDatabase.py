@@ -34,27 +34,50 @@ class User(db.Model):
     favorites = db.relationship('Favorite', backref='user', lazy=True, cascade='all, delete-orphan')
 
 
-class StudyRecord(db.Model):
-    __tablename__ = 'study_records'
+# 用户背诵进度模型
+class RecitationProgress(db.Model):
+    __tablename__ = 'recitation_progress'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    article_content = db.Column(db.Text, nullable=False)
-    score = db.Column(db.Integer)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
+    last_studied = db.Column(db.DateTime, default=datetime.utcnow)
+    mastery_level = db.Column(db.Integer, default=0)  # 0-陌生, 1-熟悉, 2-掌握
+    wrong_count = db.Column(db.Integer, default=0)
+    right_count = db.Column(db.Integer, default=0)
+
+    # 关系
+    user = db.relationship('User', backref=db.backref('progress', lazy=True, cascade='all, delete-orphan'))
+    particle = db.relationship('LexicalParticle')
+
+
+# 用户背词记录模型
+class VocabularyRecord(db.Model):
+    __tablename__ = 'vocabulary_records'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    particle_id = db.Column(db.Integer, db.ForeignKey('lexical_particles.id'), nullable=False)
     study_time = db.Column(db.DateTime, default=datetime.utcnow)
+    wrong_example_ids = db.Column(db.JSON)  # 存储答错的例句ID
+    correct_answer_ids = db.Column(db.JSON)  # 存储正确答案的释义ID
+    user_answers = db.Column(db.JSON)  # 存储用户选择的答案
+
+    # 关系
+    particle = db.relationship('LexicalParticle')
 
 
+# 用户收藏题目模型
 class Favorite(db.Model):
     __tablename__ = 'favorites'
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    content = db.Column(db.Text, nullable=False)
     title = db.Column(db.String(255), nullable=False)
-    question = db.Column(db.Text, nullable=False)
-    answer = db.Column(db.Text, nullable=False)
+    content = db.Column(db.Text, nullable=False)  # 文章内容
+    question = db.Column(db.Text)  # 题目
+    answer = db.Column(db.Text)    # 答案
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
 
 # 实词库数据模型
 class LexicalParticle(db.Model):
@@ -96,6 +119,7 @@ class Example(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     definition_id = db.Column(db.Integer, db.ForeignKey('definitions.id'), nullable=False)
     example = db.Column(db.Text, nullable=False)  # 文言例句
+
 
 
 def init_database():
