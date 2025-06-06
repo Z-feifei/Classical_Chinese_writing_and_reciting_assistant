@@ -28,7 +28,8 @@ app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'your-secret-key-here'
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://feifei123:4RQl2C3Bzam1WGr4@mysql5.sqlpub.com:3310/classical_chinese'
+app.config[
+    'SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://feifei123:4RQl2C3Bzam1WGr4@mysql5.sqlpub.com:3310/classical_chinese'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,
@@ -40,7 +41,7 @@ app.config['MAIL_SERVER'] = 'smtp.qq.com'  # 以QQ邮箱为例
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'your-email@qq.com'  # 替换为您的邮箱
-app.config['MAIL_PASSWORD'] = 'your-app-password'   # 替换为您的邮箱授权码
+app.config['MAIL_PASSWORD'] = 'your-app-password'  # 替换为您的邮箱授权码
 
 db = SQLAlchemy(app)
 
@@ -113,8 +114,9 @@ class Favorite(db.Model):
     title = db.Column(db.String(255), nullable=False)
     content = db.Column(db.Text, nullable=False)  # 文章内容
     question = db.Column(db.Text)  # 题目
-    answer = db.Column(db.Text)    # 答案
+    answer = db.Column(db.Text)  # 答案
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
 
 # 实词库数据模型
 class LexicalParticle(db.Model):
@@ -148,6 +150,7 @@ class Definition(db.Model):
 
     # 建立一对多关系
     examples = db.relationship('Example', backref='definition', cascade='all, delete-orphan')
+
 
 class Example(db.Model):
     __tablename__ = 'examples'
@@ -229,7 +232,7 @@ def add_favorite():
         title = data.get('title')
         content = data.get('content')
         question = data.get('question')  # 获取问题
-        answer = data.get('answer')      # 获取答案
+        answer = data.get('answer')  # 获取答案
 
         favorite = Favorite(
             user_id=session['user_id'],
@@ -344,10 +347,12 @@ def get_study_progress():
         'burndown_data': burndown_data
     })
 
+
 async def limited_execute(task_func):
     """带事件循环检查的异步执行器"""
     async with semaphore:
         return await task_func()
+
 
 @app.route('/')
 def home():
@@ -468,9 +473,9 @@ def send_verification():
 @login_required
 def profile():
     user = User.query.get(session['user_id'])
-    records = VocabularyRecord.query.filter_by(user_id=user.id).order_by(VocabularyRecord.study_time.desc()).limit(5).all()
+    records = VocabularyRecord.query.filter_by(user_id=user.id).order_by(VocabularyRecord.study_time.desc()).limit(
+        5).all()
     return render_template('profile.html', user=user, records=records)
-
 
 
 @app.route('/logout')
@@ -483,7 +488,6 @@ def logout():
 @app.route('/exercise')
 def exercise():
     return render_template('exercise.html')
-
 
 @app.route('/recite', methods=['GET', 'POST'])
 @login_required
@@ -505,10 +509,24 @@ def recite():
         .joinedload(Definition.examples)
     ).all()
 
-    # 智能排序算法
+    # 修改1: 过滤出未掌握的词汇（掌握级别小于2的词汇）
+    def is_unmastered(particle):
+        # 查找该词汇的用户学习记录
+        progress = next((p for p in progress_records if p.particle_id == particle.id), None)
+        return not progress or progress.mastery_level < 2
+
+    # 创建未掌握的词汇列表
+    unmastered_particles = [p for p in all_particles if is_unmastered(p)]
+    total_unmastered = len(unmastered_particles)  # 未掌握的词汇总数
+
+    # 修改sort_key函数，排除已掌握的词汇
     def sort_key(particle):
         # 查找该词汇的用户学习记录
         progress = next((p for p in progress_records if p.particle_id == particle.id), None)
+
+        # 如果已经掌握，优先级最低（确保不会出现）
+        if progress and progress.mastery_level == 2:
+            return (999, 0, 0, particle.id)  # 最高数字确保排在最后
 
         # 如果还没有学习记录，优先显示
         if not progress:
@@ -524,14 +542,21 @@ def recite():
     # 根据智能算法排序
     sorted_particles = sorted(all_particles, key=sort_key)
 
+    # 修改2: 过滤掉已掌握的词汇
+    sorted_particles = [p for p in sorted_particles if is_unmastered(p)]
+
     # 检查索引是否有效
     if current_index < 0:
         current_index = 0
-    elif current_index >= len(sorted_particles):
-        current_index = len(sorted_particles) - 1
+    elif current_index >= total_unmastered:
+        current_index = total_unmastered - 1
 
     # 组织当前词汇数据
-    current_particle = sorted_particles[current_index]
+    current_particle = sorted_particles[current_index] if sorted_particles else None
+
+    # 如果没有词汇，显示空状态
+    if not current_particle:
+        return render_template('recite.html', word_card=None, current_index=0, total_words=0)
 
     # 获取当前词汇的学习进度
     progress = RecitationProgress.query.filter_by(
@@ -633,14 +658,14 @@ def recite():
 
         # 如果全部正确，移动到下一个词汇
         if correct:
-            current_index = min(current_index + 1, len(sorted_particles) - 1)
+            current_index = min(current_index + 1, total_unmastered - 1)
             return redirect(url_for('recite', index=current_index))
         else:
             # 显示答题详情
             return render_template('recite_result.html',
                                    details=details,
                                    current_index=current_index,
-                                   total_words=len(sorted_particles),
+                                   total_words=total_unmastered,
                                    particle=current_particle)
 
     # 组织当前词汇数据（GET请求）
@@ -684,6 +709,7 @@ def recite():
     random.shuffle(definitions_options)
 
     word_card = {
+        'particle_id': current_particle.id,  # 添加ID用于标记功能
         'character': current_particle.character,
         'parts': sorted(parts, key=lambda x: x['category']),
         'examples': examples_list,
@@ -693,8 +719,43 @@ def recite():
     return render_template('recite.html',
                            word_card=word_card,
                            current_index=current_index,
-                           total_words=len(sorted_particles),
+                           total_words=total_unmastered,
                            progress=progress)
+
+@app.route('/mark_as_mastered', methods=['POST'])
+@login_required
+def mark_as_mastered():
+    try:
+        data = request.get_json()
+        particle_id = data.get('particle_id')
+        user_id = session['user_id']
+
+        # 查找或创建学习记录
+        progress = RecitationProgress.query.filter_by(
+            user_id=user_id,
+            particle_id=particle_id
+        ).first()
+
+        if not progress:
+            progress = RecitationProgress(
+                user_id=user_id,
+                particle_id=particle_id,
+                last_studied=datetime.utcnow(),
+                mastery_level=2,
+                wrong_count=0,
+                right_count=0
+            )
+            db.session.add(progress)
+        else:
+            # 更新为已掌握
+            progress.mastery_level = 2
+            progress.last_studied = datetime.utcnow()
+
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
 
 
 @app.route('/api/vocabulary_records', methods=['GET'])
@@ -807,7 +868,6 @@ def generate():
         translation = global_loop.run_until_complete(async_wrapper())
         print(translation.content)
 
-
         return jsonify({
             'article': article,
             'questions': result['questions'],
@@ -816,6 +876,7 @@ def generate():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
 
 def generate_model(filename):
     questions = {}
@@ -827,6 +888,7 @@ def generate_model(filename):
         questions[f'question{num}'] = result['questions'][f'question{num}']
         answers[f'answer{num}'] = result['answers'][f'answer{num}']
     return {'questions': questions, 'answers': answers}
+
 
 @app.route('/regenerate/<nums>', methods=['POST'])
 @limiter.limit("2 per second")
@@ -862,6 +924,7 @@ def regenerate(nums):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+
 def regenerate_model(nums):
     questions = {}
     answers = {}
@@ -871,6 +934,7 @@ def regenerate_model(nums):
         questions[f'question{num}'] = result['questions'][f'question{num}']
         answers[f'answer{num}'] = result['answers'][f'answer{num}']
     return {'questions': questions, 'answers': answers}
+
 
 @app.route('/api/lexicon')
 def lexicon_data():
@@ -922,8 +986,8 @@ def lexicon_data():
     # 执行分页查询（优化关联加载）
     pagination = base_query.options(
         db.joinedload(LexicalParticle.parts_of_speech)
-          .joinedload(PartOfSpeech.definitions)
-          .joinedload(Definition.examples)
+        .joinedload(PartOfSpeech.definitions)
+        .joinedload(Definition.examples)
     ).paginate(
         page=page,
         per_page=per_page,
@@ -965,10 +1029,13 @@ def lexicon_data():
             "total_items": pagination.total
         }
     })
+
+
 @app.route('/lexicon', endpoint='lexicon')
 def lexicon_page():
     """词库页面路由"""
     return render_template('lexicon.html')
+
 
 # 查看收藏详情
 @app.route('/favorite_detail/<int:favorite_id>')
@@ -976,6 +1043,7 @@ def lexicon_page():
 def favorite_detail(favorite_id):
     favorite = Favorite.query.filter_by(id=favorite_id, user_id=session['user_id']).first_or_404()
     return render_template('favorite_detail.html', favorite=favorite)
+
 
 # 搜索收藏
 @app.route('/search_favorites', methods=['GET'])
@@ -991,7 +1059,7 @@ def search_favorites():
         ).all()
     else:
         favorites = Favorite.query.filter_by(user_id=session['user_id']).all()
-    
+
     return jsonify({
         'success': True,
         'favorites': [{
@@ -1003,9 +1071,11 @@ def search_favorites():
         } for f in favorites]
     })
 
+
 @app.route('/personal')
 def personal():
     return render_template('profile.html')
+
 
 if __name__ == '__main__':
     # 设置全局事件循环
@@ -1013,6 +1083,7 @@ if __name__ == '__main__':
     try:
         from hypercorn.asyncio import serve
         from hypercorn.config import Config
+
         config = Config()
         config.bind = ["127.0.0.1:8000"]
         global_loop.run_until_complete(serve(app, config))

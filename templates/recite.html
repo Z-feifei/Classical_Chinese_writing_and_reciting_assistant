@@ -22,18 +22,14 @@
 <div class="container">
     <div class="content">
         <div class="button-container">
-            <button id="home-button">
 
+            <button id="mark-mastered-btn">
+                标记为已掌握
             </button>
+
             <span class="word-counter">{{ current_index + 1 }}/{{ total_words }}</span>
-            <button id="next-button">
 
-            </button>
-        </div>
-
-        <div class="text-container">
-            {% if word_card %}
-            <h2>{{ word_card.character }}
+            <div class="stats-container">
                 {% if progress %}
                 <span class="mastery-level mastery-{{ progress.mastery_level }}">
                     {% if progress.mastery_level == 0 %}陌生
@@ -43,7 +39,13 @@
                 </span>
                 <span class="stats">✓ {{ progress.right_count }} ✗ {{ progress.wrong_count }}</span>
                 {% endif %}
-            </h2>
+            </div>
+
+        </div>
+
+        <div class="text-container">
+            {% if word_card %}
+            <h2>{{ word_card.character }}</h2>
 
             <form method="POST" action="{{ url_for('recite', index=current_index) }}">
                 <div class="examples-container">
@@ -76,30 +78,11 @@
 </div>
 
 <script>
-    document.getElementById('home-button').addEventListener('click', () => {
-        window.location.href = '/';
-    });
-
-    document.getElementById('next-button').addEventListener('click', () => {
-        const newIndex = Math.min({{ current_index }} + 1, {{ total_words - 1 }});
-        window.location.href = `/recite?index=${newIndex}`;
-    });
-
-    // 添加选项选择效果
-    document.querySelectorAll('.option-item').forEach(item => {
-        item.addEventListener('click', function() {
-            const radio = this.querySelector('input[type="radio"]');
-            radio.checked = true;
-
-            // 清除所有选中状态
-            document.querySelectorAll('.option-item').forEach(el => {
-                el.classList.remove('selected');
-            });
-
-            // 设置当前选中状态
-            this.classList.add('selected');
-        });
-    });
+    // 设置全局变量（由Flask模板引擎填充）
+    var currentIndex = {{ current_index }};
+    var totalWords = {{ total_words }};
+    var wordCardParticleId = {{ word_card.particle_id }};
 </script>
+<script src="{{ url_for('static', filename='js/recite.js') }}"></script>
 </body>
 </html>

@@ -152,3 +152,27 @@ button img.icon2 {
     transform: scale(1.1);
 }
 
+/* 添加标记按钮样式 */
+#mark-mastered-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+#mark-mastered-btn:hover {
+    background-color: #45a049;
+}
+
+/* 添加已掌握标记样式 */
+.mastered-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    background-color: #4CAF50;
+    color: white;
+    font-size: 12px;
+    margin-left: 10px;
+}
