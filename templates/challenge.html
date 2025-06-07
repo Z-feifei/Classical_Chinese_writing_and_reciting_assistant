@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>挑战模式 - 文言文助手</title>
+    <link rel="stylesheet" href="/static/css/challenge.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>挑战模式</h1>
+            <a href="/" class="back-btn">返回首页</a>
+        </header>
+
+        <div class="challenge-container">
+            <!-- 挑战创建区域 -->
+            <div class="create-challenge">
+                <h2>创建新挑战</h2>
+                <div class="challenge-types">
+                    <div class="challenge-type timed" data-type="timed">
+                        <h3>定时挑战</h3>
+                        <p>在规定时间内完成尽可能多的题目</p>
+                        <div class="target-selector">
+                            <label>挑战时长(分钟):</label>
+                            <input type="number" min="1" max="60" value="10" class="time-input">
+                        </div>
+                        <button class="start-btn">开始挑战</button>
+                    </div>
+
+                    <div class="challenge-type quantitative" data-type="quantitative">
+                        <h3>定量挑战</h3>
+                        <p>完成指定数量的题目</p>
+                        <div class="target-selector">
+                            <label>目标题目数:</label>
+                            <input type="number" min="5" max="50" value="20" class="count-input">
+                        </div>
+                        <button class="start-btn">开始挑战</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 进行中的挑战 -->
+            <div class="active-challenge" style="display: none;">
+                <h2>进行中的挑战</h2>
+                <div class="challenge-info">
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span class="completed">0</span>/<span class="target">0</span>
+                        </div>
+                    </div>
+                    <div class="time-remaining" style="display: none;">
+                        剩余时间: <span class="timer">00:00</span>
+                    </div>
+                </div>
+
+                <!-- 修改后的题目卡片 -->
+                <div class="question-card">
+                    <div class="question-header">
+                        <h3 class="word-character">词</h3>
+                        <div class="question-example">例句: <span class="example-text"></span></div>
+                    </div>
+
+                    <div class="options-container">
+                        <!-- 选项将通过JS动态生成 -->
+                    </div>
+
+                    <div class="question-actions">
+                        <button class="submit-answer" disabled>提交答案</button>
+                        <button class="give-up">放弃挑战</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 挑战历史 -->
+            <div class="challenge-history">
+                <h2>挑战历史</h2>
+                <div class="history-list">
+                    <!-- 将通过JS动态加载 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/challenge.js"></script>
+</body>
+</html>

@@ -1083,6 +1083,275 @@ def search_favorites():
 def personal():
     return render_template('profile.html')
 
+# 挑战模式相关数据库配置
+class Challenge(db.Model):
+    __tablename__ = 'challenges'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_type = db.Column(db.String(20), nullable=False)  # 'timed' 或 'quantitative'
+    target = db.Column(db.Integer, nullable=False)  # 目标数量或时间(分钟)
+    completed = db.Column(db.Integer, default=0)  # 已完成数量
+    start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    end_time = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default='in_progress')  # 'in_progress', 'completed', 'failed'
+
+    # 关系
+    user = db.relationship('User', backref=db.backref('challenges', lazy=True))
+
+
+# 挑战模式API
+@app.route('/api/challenges', methods=['GET', 'POST'])
+@login_required
+def handle_challenges():
+    user_id = session['user_id']
+
+    if request.method == 'POST':
+        # 创建新挑战
+        data = request.get_json()
+        challenge_type = data.get('type')
+        target = data.get('target')
+
+        # 验证输入
+        if challenge_type not in ['timed', 'quantitative']:
+            return jsonify({'success': False, 'error': '无效的挑战类型'})
+
+        try:
+            target = int(target)
+            if target <= 0:
+                return jsonify({'success': False, 'error': '目标必须大于0'})
+        except ValueError:
+            return jsonify({'success': False, 'error': '无效的目标值'})
+
+        # 创建挑战
+        challenge = Challenge(
+            user_id=user_id,
+            challenge_type=challenge_type,
+            target=target
+        )
+
+        db.session.add(challenge)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'challenge': {
+                'id': challenge.id,
+                'type': challenge.challenge_type,
+                'target': challenge.target,
+                'start_time': challenge.start_time.isoformat()
+            }
+        })
+
+    else:
+        # 获取用户所有挑战
+        challenges = Challenge.query.filter_by(user_id=user_id).order_by(Challenge.start_time.desc()).all()
+
+        return jsonify({
+            'success': True,
+            'challenges': [{
+                'id': c.id,
+                'type': c.challenge_type,
+                'target': c.target,
+                'completed': c.completed,
+                'start_time': c.start_time.isoformat(),
+                'end_time': c.end_time.isoformat() if c.end_time else None,
+                'status': c.status
+            } for c in challenges]
+        })
+
+
+@app.route('/api/challenges/<int:challenge_id>', methods=['PUT', 'DELETE'])
+@login_required
+def handle_challenge(challenge_id):
+    user_id = session['user_id']
+    challenge = Challenge.query.filter_by(id=challenge_id, user_id=user_id).first()
+
+    if not challenge:
+        return jsonify({'success': False, 'error': '挑战不存在'})
+
+    if request.method == 'PUT':
+        # 更新挑战进度
+        data = request.get_json()
+        action = data.get('action')
+
+        if action == 'complete':
+            # 完成挑战
+            challenge.completed += 1
+            if challenge.completed >= challenge.target:
+                challenge.status = 'completed'
+                challenge.end_time = datetime.utcnow()
+            db.session.commit()
+
+        elif action == 'fail':
+            # 挑战失败
+            challenge.status = 'failed'
+            challenge.end_time = datetime.utcnow()
+            db.session.commit()
+
+        elif action == 'update':
+            # 更新进度
+            completed = data.get('completed', 0)
+            challenge.completed = completed
+            db.session.commit()
+
+        return jsonify({'success': True})
+
+    else:
+        # 删除挑战
+        db.session.delete(challenge)
+        db.session.commit()
+        return jsonify({'success': True})
+
+
+# 挑战模式API - 从实词库中选择词汇
+@app.route('/api/challenge/words', methods=['GET'])
+@login_required
+def get_challenge_words():
+    """获取挑战模式词汇 - 从实词库中随机选择，生成选择题"""
+    total_vocab_count = LexicalParticle.query.count()
+    count = request.args.get('count', total_vocab_count, type=int)
+
+    # 从实词库中随机选择指定数量的词汇
+    particles = LexicalParticle.query.options(
+        db.joinedload(LexicalParticle.parts_of_speech)
+            .joinedload(PartOfSpeech.definitions)
+            .joinedload(Definition.examples)
+    ).order_by(func.random()).limit(count).all()
+
+    # 准备词汇数据
+    words = []
+    for particle in particles:
+        # 随机选择一个词性和定义作为正确答案
+        if particle.parts_of_speech:
+            # 随机选择一个词性
+            pos = random.choice(particle.parts_of_speech)
+            if pos.definitions:
+                # 随机选择一个定义作为正确答案
+                correct_def = random.choice(pos.definitions)
+
+                # 获取例句（如果有）
+                example = correct_def.examples[0].example if correct_def.examples else "暂无例句"
+
+                # 收集其他词汇的定义作为错误选项
+                other_definitions = []
+                other_particles = LexicalParticle.query.filter(
+                    LexicalParticle.id != particle.id
+                ).options(
+                    db.joinedload(LexicalParticle.parts_of_speech)
+                        .joinedload(PartOfSpeech.definitions)
+                ).order_by(func.random()).limit(10).all()
+
+                for other_particle in other_particles:
+                    for other_pos in other_particle.parts_of_speech:
+                        for other_def in other_pos.definitions:
+                            other_definitions.append({
+                                'id': other_def.id,
+                                'text': f"{other_def.definition} ({other_pos.category})"
+                            })
+
+                # 随机选择3个错误选项
+                wrong_options = random.sample(other_definitions, min(3, len(other_definitions)))
+
+                # 添加正确答案
+                options = [{
+                    'id': correct_def.id,
+                    'text': f"{correct_def.definition} ({pos.category})",
+                    'is_correct': True
+                }]
+
+                # 添加错误选项
+                options.extend([{
+                    'id': opt['id'],
+                    'text': opt['text'],
+                    'is_correct': False
+                } for opt in wrong_options])
+
+                # 打乱选项顺序
+                random.shuffle(options)
+
+                words.append({
+                    'id': particle.id,
+                    'character': particle.character,
+                    'example': example,
+                    'options': options
+                })
+
+    return jsonify({'success': True, 'words': words})
+
+
+# 挑战模式结果提交
+@app.route('/api/challenge/submit', methods=['POST'])
+@login_required
+def submit_challenge():
+    user_id = session['user_id']
+    data = request.get_json()
+
+    challenge_id = data.get('challenge_id')
+    answers = data.get('answers')  # [{word_id: 123, answer_id: 456, is_correct: true}, ...]
+    time_used = data.get('time_used', 0)  # 获取用时，单位为秒，默认为0
+
+    # 验证挑战
+    challenge = Challenge.query.filter_by(id=challenge_id, user_id=user_id).first()
+    if not challenge:
+        return jsonify({'success': False, 'error': '挑战不存在'})
+
+    # 更新挑战进度
+    correct_count = sum(1 for answer in answers if answer.get('is_correct'))
+    challenge.completed += correct_count
+
+    # 检查挑战是否完成
+    if (challenge.challenge_type == 'quantitative' and challenge.completed >= challenge.target) or \
+            (challenge.challenge_type == 'timed' and time_used >= challenge.target * 60):
+        challenge.status = 'completed'
+        challenge.end_time = datetime.utcnow()
+
+    # 更新用户学习记录
+    for answer in answers:
+        particle_id = answer.get('word_id')
+        is_correct = answer.get('is_correct')
+
+        # 查找或创建学习记录
+        progress = RecitationProgress.query.filter_by(
+            user_id=user_id,
+            particle_id=particle_id
+        ).first()
+
+        if not progress:
+            progress = RecitationProgress(
+                user_id=user_id,
+                particle_id=particle_id,
+                last_studied=datetime.utcnow(),
+                mastery_level=0,
+                wrong_count=0,
+                right_count=0
+            )
+            db.session.add(progress)
+
+        # 更新统计信息
+        progress.last_studied = datetime.utcnow()
+        if is_correct:
+            progress.right_count += 1
+            progress.mastery_level = min(2, progress.mastery_level + 1)
+        else:
+            progress.wrong_count += 1
+            progress.mastery_level = max(0, progress.mastery_level - 1)
+
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'correct_count': correct_count,
+        'completed': challenge.completed,
+        'is_completed': challenge.status == 'completed'
+    })
+
+
+@app.route('/challenge')
+@login_required
+def challenge():
+    return render_template('challenge.html')
+
 
 if __name__ == '__main__':
     # 设置全局事件循环
