@@ -93,7 +93,7 @@ function closeModal() {
 
 // 确认退出
 function confirmLogout() {
-    window.location.href = '{{ url_for("logout") }}';
+    window.location.href = '/logout';
 }
 
 // 查看收藏详情
