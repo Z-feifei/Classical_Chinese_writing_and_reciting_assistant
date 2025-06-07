@@ -1204,78 +1204,94 @@ def handle_challenge(challenge_id):
         return jsonify({'success': True})
 
 
-# 挑战模式API - 从实词库中选择词汇
 @app.route('/api/challenge/words', methods=['GET'])
 @login_required
 def get_challenge_words():
     """获取挑战模式词汇 - 从实词库中随机选择，生成选择题"""
-    total_vocab_count = LexicalParticle.query.count()
-    count = request.args.get('count', total_vocab_count, type=int)
+    # 首先查询带有例句的词汇总数
+    total_vocab_with_examples = db.session.query(LexicalParticle).join(
+        LexicalParticle.parts_of_speech
+    ).join(
+        PartOfSpeech.definitions
+    ).join(
+        Definition.examples
+    ).group_by(LexicalParticle.id).count()
 
-    # 从实词库中随机选择指定数量的词汇
+    count = request.args.get('count', total_vocab_with_examples, type=int)
+
+    # 从带有例句的实词库中随机选择指定数量的词汇
     particles = LexicalParticle.query.options(
         db.joinedload(LexicalParticle.parts_of_speech)
             .joinedload(PartOfSpeech.definitions)
             .joinedload(Definition.examples)
-    ).order_by(func.random()).limit(count).all()
+    ).join(
+        Definition.examples
+    ).group_by(LexicalParticle.id).order_by(func.random()).limit(count).all()
 
     # 准备词汇数据
     words = []
     for particle in particles:
-        # 随机选择一个词性和定义作为正确答案
-        if particle.parts_of_speech:
-            # 随机选择一个词性
-            pos = random.choice(particle.parts_of_speech)
-            if pos.definitions:
-                # 随机选择一个定义作为正确答案
-                correct_def = random.choice(pos.definitions)
+        # 只处理带有例句的词性和定义
+        valid_pos_list = []
+        for pos in particle.parts_of_speech:
+            valid_defs = [defn for defn in pos.definitions if defn.examples]
+            if valid_defs:
+                valid_pos_list.append((pos, valid_defs))
 
-                # 获取例句（如果有）
-                example = correct_def.examples[0].example if correct_def.examples else "暂无例句"
+        # 确保至少有一个有效的词性和定义
+        if valid_pos_list:
+            # 随机选择一个词性和定义作为正确答案
+            pos, valid_defs = random.choice(valid_pos_list)
+            correct_def = random.choice(valid_defs)
+            example = random.choice(correct_def.examples).example
 
-                # 收集其他词汇的定义作为错误选项
-                other_definitions = []
-                other_particles = LexicalParticle.query.filter(
-                    LexicalParticle.id != particle.id
-                ).options(
-                    db.joinedload(LexicalParticle.parts_of_speech)
-                        .joinedload(PartOfSpeech.definitions)
-                ).order_by(func.random()).limit(10).all()
+            # 收集其他词汇的定义作为错误选项
+            other_definitions = []
+            other_particles = LexicalParticle.query.filter(
+                LexicalParticle.id != particle.id
+            ).options(
+                db.joinedload(LexicalParticle.parts_of_speech)
+                    .joinedload(PartOfSpeech.definitions)
+                    .joinedload(Definition.examples)
+            ).join(
+                Definition.examples
+            ).group_by(LexicalParticle.id).order_by(func.random()).limit(10).all()
 
-                for other_particle in other_particles:
-                    for other_pos in other_particle.parts_of_speech:
-                        for other_def in other_pos.definitions:
+            for other_particle in other_particles:
+                for other_pos in other_particle.parts_of_speech:
+                    for other_def in other_pos.definitions:
+                        if other_def.examples:  # 只选择有例句的定义
                             other_definitions.append({
                                 'id': other_def.id,
                                 'text': f"{other_def.definition} ({other_pos.category})"
                             })
 
-                # 随机选择3个错误选项
-                wrong_options = random.sample(other_definitions, min(3, len(other_definitions)))
+            # 随机选择3个错误选项
+            wrong_options = random.sample(other_definitions, min(3, len(other_definitions)))
 
-                # 添加正确答案
-                options = [{
-                    'id': correct_def.id,
-                    'text': f"{correct_def.definition} ({pos.category})",
-                    'is_correct': True
-                }]
+            # 添加正确答案
+            options = [{
+                'id': correct_def.id,
+                'text': f"{correct_def.definition} ({pos.category})",
+                'is_correct': True
+            }]
 
-                # 添加错误选项
-                options.extend([{
-                    'id': opt['id'],
-                    'text': opt['text'],
-                    'is_correct': False
-                } for opt in wrong_options])
+            # 添加错误选项
+            options.extend([{
+                'id': opt['id'],
+                'text': opt['text'],
+                'is_correct': False
+            } for opt in wrong_options])
 
-                # 打乱选项顺序
-                random.shuffle(options)
+            # 打乱选项顺序
+            random.shuffle(options)
 
-                words.append({
-                    'id': particle.id,
-                    'character': particle.character,
-                    'example': example,
-                    'options': options
-                })
+            words.append({
+                'id': particle.id,
+                'character': particle.character,
+                'example': example,
+                'options': options
+            })
 
     return jsonify({'success': True, 'words': words})
 
