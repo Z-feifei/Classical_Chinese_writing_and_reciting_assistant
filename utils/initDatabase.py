@@ -79,6 +79,21 @@ class Favorite(db.Model):
     answer = db.Column(db.Text)    # 答案
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+class Challenge(db.Model):
+    __tablename__ = 'challenges'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    challenge_type = db.Column(db.String(20), nullable=False)  # 'timed' 或 'quantitative'
+    target = db.Column(db.Integer, nullable=False)  # 目标数量或时间(分钟)
+    completed = db.Column(db.Integer, default=0)  # 已完成数量
+    start_time = db.Column(db.DateTime, default=datetime.utcnow)
+    end_time = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default='in_progress')  # 'in_progress', 'completed', 'failed'
+
+    # 关系
+    user = db.relationship('User', backref=db.backref('challenges', lazy=True))
+
 # 实词库数据模型
 class LexicalParticle(db.Model):
     __tablename__ = 'lexical_particles'
